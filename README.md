@@ -36,7 +36,7 @@ Ensure you have the following installed:
 ### 1️⃣ Run the Script
 
 ```sh
-python3 packetcap_script.sh
+./packetcap_script.sh
 ```
 
 ### 2️⃣ Select an Option
