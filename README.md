@@ -1,96 +1,120 @@
-# 🕵️ PacketCap - TCPDump Packet Capture
+# 🔥 PackCap Tool
 
-## 📌 Overview
+PackCap Tool is an advanced network and packet analysis tool designed for cybersecurity enthusiasts and network analysts. It provides a comprehensive set of features for capturing, analyzing, and managing network packets and Bluetooth HCI logs. Built with Python, Scapy, and PyShark, and featuring a stylish UI with Rich.
 
-Cybersecurity tool to easily capture network packets (and analyze). This script allows you to capture network packets using `tcpdump` and organize them into project-based folders. It provides functionality to:
+## 🚀 Key Features
 
-- Create and manage packet capture projects.
-- Select network interfaces for monitoring.
-- Filter packets by source and destination IP.
-- Save packet captures into project folders.
-- Stop live captures gracefully using `CTRL+C`.
+PackCap Tool is packed with robust features designed to simplify and enhance network and packet analysis. Here’s what it offers:
 
----
+- **Project Management:**
+  - Create, manage, and organize multiple projects efficiently.
+  - Dynamically create and select projects, with default settings tied to each project.
+  - Auto-save captures and analysis results within the selected project directory.
+  - Manage multiple projects with ease.
+  - Create and select projects dynamically.
+  - Default settings are tied to the selected project.
+- **Network Packet Capture:**
+  - Capture live network traffic across multiple interfaces with customizable filters.
+  - Apply advanced filters by source IP, destination IP, protocol type, and custom ports.
+  - Auto-generate filenames using UTC timestamps if no filename is provided.
+  - Capture live network traffic with custom filters.
+  - Save captures to project-specific directories.
+  - Auto-generate filenames with UTC timestamps.
+- **Trace File Analysis:**
+  - Analyze PCAP and LOG files from project directories.
+  - Extract detailed protocol distribution, top talkers, and packet statistics.
+  - Resolve domain names for external IPs using DNS data from captured packets.
+  - Analyze PCAP and LOG files within project directories.
+  - Extract detailed protocol distribution and top talkers.
+- **Flow Analysis:**
+  - Group packets by flow, identifying unique sessions using source IP, destination IP, ports, and protocol.
+  - Visualize flow statistics including packet counts, byte sizes, and bandwidth usage.
+  - Identify suspicious flows or anomalies by comparing session patterns.
+  - Group packets by flow (src IP, dst IP, src port, dst port, protocol).
+  - Display flow statistics including packet counts and byte sizes.
+- **Bluetooth HCI Log Analysis:**
+  - Supports Bluetooth HCI logs exported from Android devices in both PCAP and LOG formats.
+  - Detects encrypted packets, extracts Link Keys and Long Term Keys (LTK).
+  - Group packets by sessions showing Source and Destination MAC addresses and Connection Handles.
+  - Displays encryption status per session and pinpoints the packet numbers for key exchanges.
+  - Supports Bluetooth HCI logs exported from Android.
+  - Identifies encrypted packets and extracts Link Keys and Long Term Keys (LTK).
+  - Groups packets by sessions, displaying MAC addresses and connection handles.
 
-## 🚀 Installation
+## 🧰 Requirements
 
-### Prerequisites
+- Python 3.x
+- Required Python Packages:
+  - scapy
+  - pyshark
+  - rich
+  - netifaces (optional for detailed network info)
+- TShark (for Bluetooth HCI log analysis)
 
-Ensure you have the following installed:
+## ⚙️ Installation and Setup
 
-- **Linux/macOS** (or Windows with WSL)
-- `tcpdump` installed (`sudo apt install tcpdump` for Debian-based systems)
+To get started with JDZ Tools, follow the steps below to install the required dependencies and set up the environment.
 
-### Clone Repository
+1. Install Python dependencies:
 
-```sh
- git clone https://github.com/johndzilva/PacketCap.git
- cd PacketCap
- chmod +x packetcap_script.sh
+```bash
+pip install scapy pyshark rich netifaces
 ```
 
----
+2. Install TShark:
 
-## 🔧 Usage
+- On Ubuntu/Debian:
 
-### 1️⃣ Run the Script
-
-```sh
-./packetcap_script.sh
+```bash
+sudo apt install tshark
 ```
 
-### 2️⃣ Select an Option
+- On macOS (Homebrew):
 
-Once the script starts, you can:
+```bash
+brew install wireshark
+```
 
-1. **Create a new project**: Organize packet captures by project.
-2. **Select an existing project**: Choose a project folder to save captures.
-3. **Start a live capture**: Specify an interface, source, and destination IP for filtering.
-4. **Stop Capture**: Press `CTRL+C` anytime to stop capturing packets.
-5. **Exit**: Quit the script.
+- On Windows: [Download from Wireshark.org](https://www.wireshark.org/download.html) and ensure TShark is added to PATH.
 
-### 3️⃣ Create a Project
+## 🎬 Getting Started
 
-- Enter a unique name for the project.
-- A folder will be created inside the script directory (`projects/<ProjectName>`).
+Launch tool using the command below and follow the on-screen instructions to select a project or create a new one, modify default settings, and perform network captures or analysis.
 
-### 4️⃣ Start Capturing
+```bash
+python3 jdz_tools.py
+```
 
-- Choose an interface (e.g., `eth0`, `wlan0`).
-- Specify an optional source and destination IP for filtering.
-- Packets will be saved as `capture_YYYYMMDD_HHMMSS.pcap` in the selected project folder.
+1. Select a project or create a new one.
+2. Modify default settings as needed.
+3. Capture network packets or analyze existing trace files.
+4. Perform flow analysis or advanced Bluetooth HCI log analysis.
 
-### 5️⃣ Stop Capturing
+## 📚 Practical Examples
 
-- Press `CTRL+C` to stop live capture and return to the menu.
-- Captured packets remain in the project folder.
+Here are some practical examples to help you get started with JDZ Tools:
 
----
+```bash
+# Start PackCap Tools
+python3 packcap.py
 
-## 🛠 Features & Customization
+# Capture network packets and save to a project
+- Select 'Capture Network Packets'
+- Apply filters as needed (e.g., source IP, destination IP, protocol)
+- File saved with UTC timestamp if no name is given
 
-- **Modify Capture Filters**: Edit the script to change `tcpdump` options for more advanced filtering.
-- **Change Save Location**: Adjust `capture_file_path` to store captures in a different directory.
-- TODO: **Packet Analyzer**.
-
----
-
-## ❓ Troubleshooting
-
-- **Permission Denied**: Run the script with `sudo` (`sudo ./capture_script.sh`).
-- **tcpdump Not Found**: Install using `sudo apt install tcpdump` or `brew install tcpdump` (Mac).
-- **No Network Interfaces Found**: Ensure your system has active network interfaces (`ip a` or `ifconfig`).
-
----
+# Analyze Bluetooth HCI log
+- Select 'Bluetooth Trace File Analysis'
+- Choose a .log or .pcap file from the project folder
+- View sessions, encryption status, and key details
+```
 
 ## 📜 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. Feel free to modify and distribute it under the terms of the license.
 
----
+## 🚧 Contributing
 
-## 📬 Contact
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
-For issues or improvements, open an issue in this repository.
-
-
+Feel free to reach out for any queries or suggestions!
