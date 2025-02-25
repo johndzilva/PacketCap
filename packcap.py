@@ -2,11 +2,11 @@
 import os
 import sys
 import socket
+import csv
 from collections import Counter
 from datetime import datetime, timezone
 from scapy.all import sniff, wrpcap, rdpcap, get_if_list, get_if_addr, load_layer
 import pyshark
-
 
 # Load TLS layer explicitly
 load_layer("tls")
@@ -76,7 +76,7 @@ def print_banner():
         ╚════╝ ╚═════╝ ╚══════╝
 
 Advanced Network & Packet Analysis Tool
-        Cybersecurity Edition
+         Cybersecurity Edition
     """
     
     # Align the entire banner block to center
@@ -374,11 +374,9 @@ def modify_defaults():
     console.print(f"[cyan]Selected Protocol:[/cyan] {new_proto if new_proto else 'Any'}")
     new_file = console.input(f"[bold yellow]Enter Capture File Name (current: {defaults['capture_file']}): [/bold yellow]").strip()
     if new_file:
-        defaults['capture_file'] = new_file
+        defaults['capture_file'] = new_file + '.pcap'
     console.print(Panel.fit("[bold green]Defaults updated.[/bold green]", box=box.SIMPLE))
     console.input("[bold yellow]Press Enter to return to the main menu...[/bold yellow]")
-
-import datetime  # Import datetime for UTC timestamp
 
 def capture_packets():
     clear_screen()
@@ -406,10 +404,10 @@ def capture_packets():
     capture_file_name = console.input("[bold yellow]Enter Capture File Name (or press Enter for timestamped name): [/bold yellow]").strip()
     
     if not capture_file_name:  # If no input, use timestamped default
-        timestamp = datetime.datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+        timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
         defaults['capture_file'] = f"capture_{timestamp}.pcap"
     else:
-        defaults['capture_file'] = capture_file_name
+        defaults['capture_file'] = capture_file_name + '.pcap'
 
     # Determine output file path
     if defaults['project_path']:
@@ -484,6 +482,84 @@ def resolve_ip_with_hostname(ip, dns_map=None):
             return ip
     except Exception:
         return ip
+
+def export_tls_sessions_to_csv(sessions, dns_map, specific_session=None):
+    """Export TLS sessions data to a CSV file."""
+    timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
+    
+    # File naming convention
+    if specific_session:
+        client_ip, server_ip = specific_session
+        filename = f"tls_session_{client_ip}_{server_ip}_{timestamp}.csv"
+    else:
+        filename = f"tls_sessions_{timestamp}.csv"
+    
+    # Save file to the current project directory
+    file_path = os.path.join(defaults['project_path'], filename) if defaults['project_path'] else filename
+    
+    # CSV Header
+    headers = ["Client Address", "Server Address", "Offered Cipher Suite", 
+               "Offered Best Practice", "Selected Cipher Suite", "Selected Best Practice"]
+    
+    with open(file_path, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(headers)
+        
+        # Export either all sessions or a specific one
+        for session in sessions:
+            if specific_session and (session["client"], session["server"]) != specific_session:
+                continue
+            
+            # Resolve IP with Domain Name
+            client_addr = resolve_ip_with_hostname(session['client'], dns_map)
+            server_addr = resolve_ip_with_hostname(session['server'], dns_map)
+            
+            # Selected Cipher Details (Once per Session)
+            selected_name, selected_rec = session["selected"]
+            selected_cipher = f"{selected_name}"
+            selected_best_practice = "Yes" if selected_rec else "No"
+            
+            # Format Offered Ciphers - Each Cipher Suite on a New Row
+            if session['offered']:
+                # Flag to display Client and Server Address only once per session
+                first_row = True
+                for name, rec in session['offered']:
+                    offered_cipher = name
+                    offered_best_practice = "Yes" if rec else "No"
+                    
+                    # Display Client/Server Address and Selected Cipher only once per session
+                    if first_row:
+                        writer.writerow([
+                            client_addr, 
+                            server_addr, 
+                            offered_cipher, 
+                            offered_best_practice, 
+                            selected_cipher, 
+                            selected_best_practice
+                        ])
+                        first_row = False
+                    else:
+                        # Leave Client/Server Address and Selected Cipher empty for subsequent rows
+                        writer.writerow([
+                            "", 
+                            "", 
+                            offered_cipher, 
+                            offered_best_practice, 
+                            "", 
+                            ""
+                        ])
+            else:
+                # If no offered ciphers, still write the session details once
+                writer.writerow([
+                    client_addr, 
+                    server_addr, 
+                    "N/A", 
+                    "N/A", 
+                    selected_cipher, 
+                    selected_best_practice
+                ])
+    
+    console.print(f"[green]TLS session data exported successfully to {file_path}[/green]")
 
 def advanced_packet_analysis(packets):
     clear_screen()
@@ -700,6 +776,24 @@ def advanced_packet_analysis(packets):
                 selected_disp = f"[green]{selected_name}[/green]" if selected_rec else f"[red]{selected_name}[/red]"
                 tls_table.add_row(client_disp, server_disp, sess['sni'], offered, selected_disp)
             console.print(tls_table)
+
+            # Option to Export TLS Data
+            export_choice = console.input("[bold yellow]\nDo you want to export TLS session data? (y/N): [/bold yellow]").strip().lower()
+            if export_choice == 'y':
+                console.print("[bold cyan]\nSelect Session to Export:[/bold cyan]")
+                console.print("[green]0. Export All Sessions[/green]")
+                for idx, sess in enumerate(sessions, 1):
+                    client_disp = resolve_ip_with_hostname(sess['client'], dns_map)
+                    server_disp = resolve_ip_with_hostname(sess['server'], dns_map)
+                    console.print(f"[green]{idx}.[/green] Client: {client_disp}, Server: {server_disp}")
+                session_choice = console.input("[bold yellow]Select session number (or 0 for all): [/bold yellow]").strip()
+                
+                if session_choice == '0':
+                    export_tls_sessions_to_csv(sessions, dns_map)
+                else:
+                    idx = int(session_choice) - 1
+                    specific_session = (sessions[idx]['client'], sessions[idx]['server'])
+                    export_tls_sessions_to_csv(sessions, dns_map, specific_session)
         else:
             console.print("[red]No TLS sessions found.[/red]")
     else:
