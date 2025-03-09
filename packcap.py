@@ -7,6 +7,9 @@ from collections import Counter
 from datetime import datetime, timezone
 from scapy.all import sniff, wrpcap, rdpcap, get_if_list, get_if_addr, load_layer
 import pyshark
+import subprocess
+import json
+import time
 
 # Load TLS layer explicitly
 load_layer("tls")
@@ -1098,6 +1101,413 @@ def analyze_trace():
     else:
         console.input("\n[bold yellow]Press Enter to return to the main menu...[/bold yellow]")
 
+def run_nessus_scan():
+    """Run a Nessus scan on a target IP with policy selection"""
+    console.print("[bold cyan]Fetching available Nessus policies...[/bold cyan]")
+
+    try:
+        # Fetch Nessus policies
+        result = subprocess.run(["/opt/nessus/sbin/nessuscli", "policy", "list"], capture_output=True, text=True)
+        if result.returncode != 0:
+            console.print("[red]Failed to retrieve scan policies. Check if Nessus is running.[/red]")
+            return
+        policies = result.stdout.strip().split("\n")
+        if not policies:
+            console.print("[red]No scan policies found![/red]")
+            return
+
+        # Display policies
+        policy_table = Table(title="Available Nessus Scan Policies", box=box.SIMPLE_HEAVY)
+        policy_table.add_column("No.", justify="right", style="cyan")
+        policy_table.add_column("Policy Name", style="green")
+        for i, policy in enumerate(policies, start=1):
+            policy_table.add_row(str(i), policy)
+
+        console.print(policy_table)
+
+        # Prompt user to select a policy
+        while True:
+            choice = console.input("[bold yellow]Select a policy number: [/bold yellow]").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(policies):
+                selected_policy = policies[int(choice) - 1]
+                break
+            console.print("[red]Invalid selection. Please enter a valid policy number.[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Error retrieving policies: {e}[/red]")
+        return
+
+    # Prompt for target IP
+    target = console.input("[bold yellow]Enter target IP or hostname: [/bold yellow]").strip()
+    if not target:
+        console.print("[red]Target is required![/red]")
+        return
+
+    # Prompt for Nessus credentials
+    username = console.input("[bold yellow]Enter Nessus username: [/bold yellow]").strip()
+    password = console.input("[bold yellow]Enter Nessus password: [/bold yellow]").strip()
+
+    console.print(f"[cyan]Starting Nessus scan on {target} using policy '{selected_policy}'...[/cyan]")
+
+    try:
+        # Run Nessus scan
+        result = subprocess.run(
+            ["/opt/nessus/sbin/nessuscli", "scan", "--target", target, "--policy", selected_policy,
+             "--username", username, "--password", password],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            console.print("[green]Scan started successfully![/green]")
+            console.print(result.stdout)
+        else:
+            console.print("[red]Failed to start scan. Check policy and credentials.[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to Nessus menu...[/bold yellow]")
+
+def nessus_scan_management():
+    """Menu-driven Nessus scan execution and reporting"""
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]Nessus Scan Management[/bold cyan]", box=box.DOUBLE))
+
+    while True:
+        # Nessus Menu Options
+        nessus_menu = Table(box=box.SIMPLE_HEAVY)
+        nessus_menu.add_column("Option", justify="center", style="bold magenta")
+        nessus_menu.add_column("Description", style="cyan")
+        nessus_menu.add_row("1", "List Available Nessus Scan Policies")
+        nessus_menu.add_row("2", "Run a Nessus Scan")
+        nessus_menu.add_row("3", "List Running Scans")
+        nessus_menu.add_row("4", "Export Scan Report")
+        nessus_menu.add_row("5", "Return to Main Menu")
+
+        console.print(nessus_menu)
+        choice = console.input("[bold yellow]Select an option (1-5): [/bold yellow]").strip()
+
+        if choice == "1":
+            list_nessus_policies()
+        elif choice == "2":
+            run_nessus_scan()
+        elif choice == "3":
+            list_running_nessus_scans()
+        elif choice == "4":
+            export_nessus_scan_report()
+        elif choice == "5":
+            return
+        else:
+            console.print("[red]Invalid option. Please try again.[/red]")
+
+def list_nessus_policies():
+    """List available Nessus scan policies"""
+    console.print("[bold cyan]Fetching available Nessus policies...[/bold cyan]")
+    
+    try:
+        # Run Nessus CLI command
+        result = subprocess.run(["/opt/nessus/sbin/nessuscli", "policy", "list"], capture_output=True, text=True)
+        if result.returncode == 0:
+            console.print("[green]Available Scan Policies:[/green]\n" + result.stdout)
+        else:
+            console.print("[red]Failed to retrieve scan policies. Check if Nessus is running.[/red]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to Nessus menu...[/bold yellow]")
+
+def run_nessus_scan():
+    """Run a Nessus scan on a target IP and monitor its status"""
+    console.print("[bold cyan]Fetching available Nessus policies...[/bold cyan]")
+
+    try:
+        # Fetch Nessus scan policies
+        result = subprocess.run(["/opt/nessus/sbin/nessuscli", "policy", "list"], capture_output=True, text=True)
+        if result.returncode != 0:
+            console.print("[red]Failed to retrieve scan policies. Check if Nessus is running.[/red]")
+            return
+        policies = result.stdout.strip().split("\n")
+        if not policies:
+            console.print("[red]No scan policies found![/red]")
+            return
+
+        # Display policies
+        policy_table = Table(title="Available Nessus Scan Policies", box=box.SIMPLE_HEAVY)
+        policy_table.add_column("No.", justify="right", style="cyan")
+        policy_table.add_column("Policy Name", style="green")
+        for i, policy in enumerate(policies, start=1):
+            policy_table.add_row(str(i), policy)
+
+        console.print(policy_table)
+
+        # Prompt user to select a policy
+        while True:
+            choice = console.input("[bold yellow]Select a policy number: [/bold yellow]").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(policies):
+                selected_policy = policies[int(choice) - 1]
+                break
+            console.print("[red]Invalid selection. Please enter a valid policy number.[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Error retrieving policies: {e}[/red]")
+        return
+
+    # Prompt for target IP
+    target = console.input("[bold yellow]Enter target IP or hostname: [/bold yellow]").strip()
+    if not target:
+        console.print("[red]Target is required![/red]")
+        return
+
+    # Prompt for Nessus credentials
+    username = console.input("[bold yellow]Enter Nessus username: [/bold yellow]").strip()
+    password = console.input("[bold yellow]Enter Nessus password: [/bold yellow]").strip()
+
+    console.print(f"[cyan]Starting Nessus scan on {target} using policy '{selected_policy}'...[/cyan]")
+
+    try:
+        # Run Nessus scan and get scan ID
+        result = subprocess.run(
+            ["/opt/nessus/sbin/nessuscli", "scan", "--target", target, "--policy", selected_policy,
+             "--username", username, "--password", password],
+            capture_output=True, text=True
+        )
+        
+        if result.returncode == 0:
+            output_lines = result.stdout.strip().split("\n")
+            scan_id = None
+            
+            # Extract scan ID from output
+            for line in output_lines:
+                if "Scan ID:" in line:
+                    scan_id = line.split(":")[1].strip()
+                    break
+            
+            if not scan_id:
+                console.print("[red]Scan started, but scan ID could not be retrieved![/red]")
+                return
+            
+            console.print(f"[green]Scan started successfully! Scan ID: {scan_id}[/green]")
+
+            # Monitor scan progress
+            monitor_nessus_scan(scan_id)
+            
+        else:
+            console.print("[red]Failed to start scan. Check policy and credentials.[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to Nessus menu...[/bold yellow]")
+
+def monitor_nessus_scan(scan_id):
+    """Monitor a Nessus scan until completion"""
+    console.print(f"[cyan]Monitoring scan progress (ID: {scan_id})...[/cyan]")
+
+    while True:
+        try:
+            # Fetch scan status
+            result = subprocess.run(
+                ["/opt/nessus/sbin/nessuscli", "scan", "list"],
+                capture_output=True, text=True
+            )
+
+            if result.returncode != 0:
+                console.print("[red]Failed to retrieve scan status.[/red]")
+                return
+
+            scans = result.stdout.strip().split("\n")
+            scan_status = None
+
+            # Parse scan status
+            for scan in scans:
+                if scan_id in scan:
+                    scan_status = scan.split()[-1]  # Status is the last word
+
+            if not scan_status:
+                console.print("[red]Scan not found! It may have already completed or failed.[/red]")
+                return
+
+            console.print(f"[blue]Current scan status: {scan_status}[/blue]")
+
+            # If scan is completed, notify the user
+            if scan_status.lower() in ["completed", "done"]:
+                console.print(f"[green]Scan {scan_id} has completed![/green]")
+                return
+            
+            # Wait before checking again
+            time.sleep(5)
+
+        except Exception as e:
+            console.print(f"[red]Error monitoring scan: {e}[/red]")
+            return
+
+def list_running_nessus_scans():
+    """List currently running Nessus scans"""
+    console.print("[bold cyan]Checking running scans...[/bold cyan]")
+
+    try:
+        result = subprocess.run(["/opt/nessus/sbin/nessuscli", "scan", "list"], capture_output=True, text=True)
+        if result.returncode == 0:
+            console.print("[green]Running Scans:[/green]\n" + result.stdout)
+        else:
+            console.print("[red]Failed to retrieve running scans.[/red]")
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to Nessus menu...[/bold yellow]")
+
+def export_nessus_scan_report():
+    """List available scans and export the selected scan as a PDF report"""
+    console.print("[bold cyan]Fetching available Nessus scans...[/bold cyan]")
+
+    try:
+        # Fetch list of completed scans
+        result = subprocess.run(["/opt/nessus/sbin/nessuscli", "scan", "list"], capture_output=True, text=True)
+        if result.returncode != 0:
+            console.print("[red]Failed to retrieve scan list. Ensure Nessus is running.[/red]")
+            return
+        scans = result.stdout.strip().split("\n")
+        if not scans:
+            console.print("[red]No completed scans found![/red]")
+            return
+
+        # Display available scans
+        scan_table = Table(title="Available Nessus Scans", box=box.SIMPLE_HEAVY)
+        scan_table.add_column("No.", justify="right", style="cyan")
+        scan_table.add_column("Scan ID", style="green")
+        scan_table.add_column("Scan Name", style="magenta")
+
+        scan_data = []
+        for scan in scans:
+            parts = scan.split()  # Parse scan list
+            if len(parts) >= 2:
+                scan_id, scan_name = parts[0], " ".join(parts[1:])
+                scan_data.append((scan_id, scan_name))
+                scan_table.add_row(str(len(scan_data)), scan_id, scan_name)
+
+        console.print(scan_table)
+
+        # Prompt user to select a scan
+        while True:
+            choice = console.input("[bold yellow]Select a scan number: [/bold yellow]").strip()
+            if choice.isdigit() and 1 <= int(choice) <= len(scan_data):
+                selected_scan_id, selected_scan_name = scan_data[int(choice) - 1]
+                break
+            console.print("[red]Invalid selection. Please enter a valid scan number.[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Error retrieving scans: {e}[/red]")
+        return
+
+    # Export the selected scan as a PDF
+    output_file = f"nessus_report_{selected_scan_name.replace(' ', '_')}.pdf"
+
+    console.print(f"[cyan]Exporting report for scan '{selected_scan_name}'...[/cyan]")
+
+    try:
+        result = subprocess.run(
+            ["/opt/nessus/sbin/nessuscli", "report", "--export", "--format", "pdf",
+             "--output", output_file, "--scan", selected_scan_id],
+            capture_output=True, text=True
+        )
+        if result.returncode == 0:
+            console.print(f"[green]Report exported successfully: {output_file}[/green]")
+        else:
+            console.print("[red]Failed to export report. Check scan ID.[/red]")
+
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to Nessus menu...[/bold yellow]")
+
+def copy_bluetooth_log_from_android():
+    """Extract Bluetooth log from an Android device via ADB."""
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]Copying Bluetooth Log from Android[/bold cyan]", box=box.DOUBLE))
+
+    console.print("[bold yellow]Please connect your Android device and enable USB Debugging.[/bold yellow]")
+    console.print("[cyan]Checking device connection status...[/cyan]")
+
+    try:
+        # Check if ADB is installed
+        subprocess.run(["adb", "version"], capture_output=True, text=True, check=True)
+
+        # Check if device is connected
+        result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
+        device_lines = result.stdout.strip().split("\n")
+        devices = [line for line in device_lines[1:] if line.strip()]
+
+        if not devices:
+            console.print("[red]No Android device detected! Please check your connection and enable USB Debugging.[/red]")
+            console.input("\n[bold yellow]Press Enter to return...[/bold yellow]")
+            return
+
+        console.print("[green]Android device detected![/green]")
+
+        # Define possible log file locations
+        possible_paths = [
+            "/sdcard/Android/data/com.android.bluetooth/files/btsnoop_hci.log",  # Non-rooted path
+            "/data/misc/bluetooth/logs/btsnoop_hci.log"  # Rooted path (requires root)
+        ]
+
+        project_path = defaults.get('project_path', os.getcwd())
+        destination_file = os.path.join(project_path, "btsnoop_hci.log")
+
+        log_found = False
+        for log_file in possible_paths:
+            console.print(f"[cyan]Checking for Bluetooth log at: {log_file}[/cyan]")
+            
+            check_file = subprocess.run(["adb", "shell", "ls", log_file], capture_output=True, text=True)
+            if "No such file" not in check_file.stdout:
+                console.print(f"[green]Log file found! Copying from: {log_file}[/green]")
+
+                copy_result = subprocess.run(["adb", "pull", log_file, destination_file], capture_output=True, text=True)
+
+                if copy_result.returncode == 0:
+                    console.print(f"[green]Bluetooth log file successfully copied to: {destination_file}[/green]")
+                    log_found = True
+                else:
+                    console.print("[red]Failed to copy Bluetooth log. Ensure logging is enabled.[/red]")
+                break
+
+        if not log_found:
+            console.print("[red]Bluetooth log file not found![/red]")
+            console.print("[yellow]Ensure HCI snoop logging is enabled in Developer Options.[/yellow]")
+            console.print("[bold yellow]Path may vary by device. Try searching manually with ADB shell.[/bold yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error: {e}[/red]")
+    except FileNotFoundError:
+        console.print("[red]ADB command not found! Ensure ADB is installed and added to your system PATH.[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to Bluetooth Trace Analysis menu...[/bold yellow]")
+
+def bluetooth_trace_file_analysis():
+    """Bluetooth Trace File Analysis Menu."""
+    while True:
+        clear_screen()
+        console.print(Panel.fit("[bold cyan]Bluetooth Trace File Analysis[/bold cyan]", box=box.DOUBLE))
+
+        # Bluetooth Analysis Submenu
+        bt_menu = Table(box=box.SIMPLE_HEAVY)
+        bt_menu.add_column("Option", justify="center", style="bold magenta")
+        bt_menu.add_column("Description", style="cyan")
+        bt_menu.add_row("1", "Copy Bluetooth Log File from Android")
+        bt_menu.add_row("2", "Select Log File and Analyze")
+        bt_menu.add_row("3", "Return to Main Menu")
+
+        console.print(bt_menu)
+
+        choice = console.input("[bold yellow]Select an option (1-3): [/bold yellow]").strip()
+
+        if choice == "1":
+            copy_bluetooth_log_from_android()
+        elif choice == "2":
+            analyze_bluetooth_trace()
+        elif choice == "3":
+            return
+        else:
+            console.print("[red]Invalid option. Please try again.[/red]")
+
 def main_menu():
     while True:
         clear_screen()
@@ -1114,13 +1524,14 @@ def main_menu():
         
         # Menu Options with Consistent Style
         menu_items = [
-            ("1", "Project Management", "blue"),
-            ("2", "Modify Default Settings", "yellow"),
-            ("3", "Capture Network Packets", "green"),
-            ("4", "Analyze Trace File", "cyan"),
-            ("5", "Flow Analysis", "magenta"),
-            ("6", "Analyze Bluetooth Trace (.log)", "bright_cyan"),
-            ("7", "Exit", "red")
+            ("1", " Project Management", "yellow"),
+            ("2", " Modify Default Settings", "green"),
+            ("3", " Capture Network Packets", "cyan"),
+            ("4", " Analyze Trace File", "magenta"),
+            ("5", " Flow Analysis", "blue"),
+            ("6", " Bluetooth Trace File Analysis", "red"),
+            ("7", " Nessus Scan Management", "cyan"),
+            ("8", " Exit", "red"),
         ]
 
         # Constructing the Menu Panel
@@ -1156,11 +1567,11 @@ def main_menu():
         elif choice == '5':
             flow_analysis()
         elif choice == '6':
-            analyze_bluetooth_trace()  # New Option for Bluetooth Analysis
-        elif choice == '7' or choice == 'q':
-            console.print(
-                Panel.fit("[bold cyan]Exiting...[/bold cyan]", box=box.DOUBLE)
-            )
+            bluetooth_trace_file_analysis()
+        elif choice == "7":
+            nessus_scan_management()
+        elif choice == "8" or choice == 'q':
+            console.print(Panel.fit("[bold cyan]Exiting...[/bold cyan]", box=box.DOUBLE))
             sys.exit(0)
         else:
             console.print("[red]Invalid option. Please try again.[/red]")
