@@ -10,6 +10,7 @@ import pyshark
 import subprocess
 import json
 import time
+import pandas as pd
 
 # Load TLS layer explicitly
 load_layer("tls")
@@ -1177,8 +1178,8 @@ def nessus_scan_management():
         nessus_menu = Table(box=box.SIMPLE_HEAVY)
         nessus_menu.add_column("Option", justify="center", style="bold magenta")
         nessus_menu.add_column("Description", style="cyan")
-        nessus_menu.add_row("1", "List Available Nessus Scan Policies")
-        nessus_menu.add_row("2", "Run a Nessus Scan")
+        nessus_menu.add_row("1", "Run Basic Network Scan")
+        nessus_menu.add_row("2", "Run Policy-based Scan")
         nessus_menu.add_row("3", "List Running Scans")
         nessus_menu.add_row("4", "Export Scan Report")
         nessus_menu.add_row("5", "Return to Main Menu")
@@ -1187,9 +1188,9 @@ def nessus_scan_management():
         choice = console.input("[bold yellow]Select an option (1-5): [/bold yellow]").strip()
 
         if choice == "1":
-            list_nessus_policies()
+            run_basic_network_scan()
         elif choice == "2":
-            run_nessus_scan()
+            run_policy_scan()
         elif choice == "3":
             list_running_nessus_scans()
         elif choice == "4":
@@ -1199,28 +1200,66 @@ def nessus_scan_management():
         else:
             console.print("[red]Invalid option. Please try again.[/red]")
 
-def list_nessus_policies():
-    """List available Nessus scan policies"""
-    console.print("[bold cyan]Fetching available Nessus policies...[/bold cyan]")
-    
+def run_basic_network_scan():
+    """Run a basic network scan without requiring a policy"""
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]Basic Network Scan[/bold cyan]", box=box.DOUBLE))
+
+    # Prompt for target IP or range
+    target = console.input("[bold yellow]Enter target IP/range (e.g., 192.168.1.0/24): [/bold yellow]").strip()
+    if not target:
+        console.print("[red]Target is required![/red]")
+        return
+
+    # Prompt for Nessus credentials
+    username = console.input("[bold yellow]Enter Nessus username: [/bold yellow]").strip()
+    password = console.input("[bold yellow]Enter Nessus password: [/bold yellow]").strip()
+
+    console.print(f"[cyan]Starting basic network scan on {target}...[/cyan]")
+
     try:
-        # Run Nessus CLI command
-        result = subprocess.run(["/opt/nessus/sbin/nessuscli", "policy", "list"], capture_output=True, text=True)
+        # Run basic network scan with default settings
+        result = subprocess.run(
+            ["/opt/nessus/sbin/nessuscli", "scan", "--target", target,
+             "--template", "basic",  # Use basic network scan template
+             "--username", username, "--password", password],
+            capture_output=True, text=True
+        )
+        
         if result.returncode == 0:
-            console.print("[green]Available Scan Policies:[/green]\n" + result.stdout)
+            output_lines = result.stdout.strip().split("\n")
+            scan_id = None
+            
+            # Extract scan ID from output
+            for line in output_lines:
+                if "Scan ID:" in line:
+                    scan_id = line.split(":")[1].strip()
+                    break
+            
+            if scan_id:
+                console.print(f"[green]Basic network scan started successfully! Scan ID: {scan_id}[/green]")
+                # Monitor scan progress
+                monitor_nessus_scan(scan_id)
+            else:
+                console.print("[red]Scan started but couldn't retrieve scan ID.[/red]")
         else:
-            console.print("[red]Failed to retrieve scan policies. Check if Nessus is running.[/red]")
+            console.print("[red]Failed to start basic network scan.[/red]")
+            if result.stderr:
+                console.print(f"[red]Error: {result.stderr}[/red]")
+
     except Exception as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"[red]Error starting scan: {e}[/red]")
 
     console.input("\n[bold yellow]Press Enter to return to Nessus menu...[/bold yellow]")
 
-def run_nessus_scan():
-    """Run a Nessus scan on a target IP and monitor its status"""
+def run_policy_scan():
+    """Run a Nessus scan with a selected policy"""
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]Policy-based Scan[/bold cyan]", box=box.DOUBLE))
     console.print("[bold cyan]Fetching available Nessus policies...[/bold cyan]")
 
     try:
-        # Fetch Nessus scan policies
+        # Fetch Nessus policies
         result = subprocess.run(["/opt/nessus/sbin/nessuscli", "policy", "list"], capture_output=True, text=True)
         if result.returncode != 0:
             console.print("[red]Failed to retrieve scan policies. Check if Nessus is running.[/red]")
@@ -1247,51 +1286,41 @@ def run_nessus_scan():
                 break
             console.print("[red]Invalid selection. Please enter a valid policy number.[/red]")
 
-    except Exception as e:
-        console.print(f"[red]Error retrieving policies: {e}[/red]")
-        return
+        # Get target and credentials
+        target = console.input("[bold yellow]Enter target IP/range: [/bold yellow]").strip()
+        if not target:
+            console.print("[red]Target is required![/red]")
+            return
 
-    # Prompt for target IP
-    target = console.input("[bold yellow]Enter target IP or hostname: [/bold yellow]").strip()
-    if not target:
-        console.print("[red]Target is required![/red]")
-        return
+        username = console.input("[bold yellow]Enter Nessus username: [/bold yellow]").strip()
+        password = console.input("[bold yellow]Enter Nessus password: [/bold yellow]").strip()
 
-    # Prompt for Nessus credentials
-    username = console.input("[bold yellow]Enter Nessus username: [/bold yellow]").strip()
-    password = console.input("[bold yellow]Enter Nessus password: [/bold yellow]").strip()
+        console.print(f"[cyan]Starting policy-based scan on {target} using policy '{selected_policy}'...[/cyan]")
 
-    console.print(f"[cyan]Starting Nessus scan on {target} using policy '{selected_policy}'...[/cyan]")
-
-    try:
-        # Run Nessus scan and get scan ID
+        # Run the scan
         result = subprocess.run(
-            ["/opt/nessus/sbin/nessuscli", "scan", "--target", target, "--policy", selected_policy,
+            ["/opt/nessus/sbin/nessuscli", "scan", "--target", target,
+             "--policy", selected_policy,
              "--username", username, "--password", password],
             capture_output=True, text=True
         )
-        
+
         if result.returncode == 0:
-            output_lines = result.stdout.strip().split("\n")
             scan_id = None
-            
-            # Extract scan ID from output
-            for line in output_lines:
+            for line in result.stdout.strip().split("\n"):
                 if "Scan ID:" in line:
                     scan_id = line.split(":")[1].strip()
                     break
             
-            if not scan_id:
-                console.print("[red]Scan started, but scan ID could not be retrieved![/red]")
-                return
-            
-            console.print(f"[green]Scan started successfully! Scan ID: {scan_id}[/green]")
-
-            # Monitor scan progress
-            monitor_nessus_scan(scan_id)
-            
+            if scan_id:
+                console.print(f"[green]Policy scan started successfully! Scan ID: {scan_id}[/green]")
+                monitor_nessus_scan(scan_id)
+            else:
+                console.print("[red]Scan started but couldn't retrieve scan ID.[/red]")
         else:
-            console.print("[red]Failed to start scan. Check policy and credentials.[/red]")
+            console.print("[red]Failed to start policy scan.[/red]")
+            if result.stderr:
+                console.print(f"[red]Error: {result.stderr}[/red]")
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
@@ -1434,50 +1463,161 @@ def copy_bluetooth_log_from_android():
         # Check if device is connected
         result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
         device_lines = result.stdout.strip().split("\n")
-        devices = [line for line in device_lines[1:] if line.strip()]
-
+        
+        # Filter out empty lines and the "List of devices attached" header
+        devices = [line.split()[0] for line in device_lines[1:] if line.strip() and not line.startswith("List")]
+        
         if not devices:
             console.print("[red]No Android device detected! Please check your connection and enable USB Debugging.[/red]")
             console.input("\n[bold yellow]Press Enter to return...[/bold yellow]")
             return
 
-        console.print("[green]Android device detected![/green]")
+        device_id = devices[0]
+        console.print(f"[green]Android device detected! Device ID: {device_id}[/green]")
+        
+        # Check for authorization state
+        if "unauthorized" in result.stdout:
+            console.print("[red]Device is unauthorized. Please check and accept the authorization dialog on your device.[/red]")
+            console.input("\n[bold yellow]Press Enter after accepting the dialog...[/bold yellow]")
+            
+            # Check again after user confirmation
+            result = subprocess.run(["adb", "devices"], capture_output=True, text=True)
+            if "unauthorized" in result.stdout:
+                console.print("[red]Device still unauthorized. Please check USB debugging settings.[/red]")
+                console.input("\n[bold yellow]Press Enter to return...[/bold yellow]")
+                return
 
-        # Define possible log file locations
+        # Define possible log file locations (most common paths)
         possible_paths = [
-            "/sdcard/Android/data/com.android.bluetooth/files/btsnoop_hci.log",  # Non-rooted path
-            "/data/misc/bluetooth/logs/btsnoop_hci.log"  # Rooted path (requires root)
+            "/data/misc/bluetooth/logs/btsnoop_hci.log",  # Common internal storage path
+            "/data/misc/bluedroid/btsnoop_hci.log",  # Alternative internal path
+            "/data/misc/bluetooth/btsnoop_hci.log",  # Another common path
+            "/data/btsnoop/",  # Directory that might contain the log
+            "/storage/emulated/0/Android/data/com.android.bluetooth/files/logs/btsnoop_hci.log",  # Internal storage Android path
+            "/storage/emulated/0/Android/data/com.android.bluetooth/files/btsnoop_hci.log",  # Alternative internal storage path
+            "/storage/emulated/0/btsnoop_hci.log"  # Root of internal storage
         ]
 
+        # Get the directory to save the log file to
         project_path = defaults.get('project_path', os.getcwd())
-        destination_file = os.path.join(project_path, "btsnoop_hci.log")
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        destination_file = os.path.join(project_path, f"btsnoop_hci_{timestamp}.log")
 
+        # Check each possible location
         log_found = False
         for log_file in possible_paths:
             console.print(f"[cyan]Checking for Bluetooth log at: {log_file}[/cyan]")
             
-            check_file = subprocess.run(["adb", "shell", "ls", log_file], capture_output=True, text=True)
-            if "No such file" not in check_file.stdout:
+            # Use ls -l to get more detailed information about the file
+            check_cmd = f"adb -s {device_id} shell 'ls -l {log_file} 2>/dev/null || echo \"NOT_FOUND\"'"
+            check_result = subprocess.run(check_cmd, shell=True, capture_output=True, text=True)
+            
+            if "NOT_FOUND" not in check_result.stdout:
                 console.print(f"[green]Log file found! Copying from: {log_file}[/green]")
-
-                copy_result = subprocess.run(["adb", "pull", log_file, destination_file], capture_output=True, text=True)
-
-                if copy_result.returncode == 0:
+                
+                # Try to copy the file - show more detailed output for debugging
+                console.print(f"[yellow]Executing: adb -s {device_id} pull {log_file} {destination_file}[/yellow]")
+                copy_result = subprocess.run(
+                    ["adb", "-s", device_id, "pull", log_file, destination_file], 
+                    capture_output=True, 
+                    text=True
+                )
+                
+                console.print(f"[cyan]Command output: {copy_result.stdout}[/cyan]")
+                if copy_result.stderr:
+                    console.print(f"[yellow]Error output: {copy_result.stderr}[/yellow]")
+                
+                if copy_result.returncode == 0 and os.path.exists(destination_file):
+                    file_size = os.path.getsize(destination_file)
                     console.print(f"[green]Bluetooth log file successfully copied to: {destination_file}[/green]")
+                    console.print(f"[green]File size: {file_size} bytes[/green]")
                     log_found = True
+                    break
                 else:
-                    console.print("[red]Failed to copy Bluetooth log. Ensure logging is enabled.[/red]")
-                break
+                    console.print("[red]Failed to copy Bluetooth log. Will try alternative paths.[/red]")
+            else:
+                console.print(f"[yellow]Log file not found at: {log_file}[/yellow]")
 
+        # If no predefined paths worked, ask user for custom path
         if not log_found:
-            console.print("[red]Bluetooth log file not found![/red]")
-            console.print("[yellow]Ensure HCI snoop logging is enabled in Developer Options.[/yellow]")
-            console.print("[bold yellow]Path may vary by device. Try searching manually with ADB shell.[/bold yellow]")
+            console.print("[red]Bluetooth log file not found in common locations![/red]")
+            console.print("[yellow]Attempting to search for any Bluetooth logs...[/yellow]")
+            
+            # Search for log files in common locations
+            search_cmd = "adb -s " + device_id + " shell 'find /sdcard -name \"*snoop*\" -o -name \"*btsnoop*\" -o -name \"*bluetooth*.log\"'"
+            search_result = subprocess.run(search_cmd, shell=True, capture_output=True, text=True)
+            
+            if search_result.stdout.strip():
+                console.print("[green]Found potential Bluetooth log files:[/green]")
+                found_files = search_result.stdout.strip().split('\n')
+                
+                for idx, file in enumerate(found_files, 1):
+                    if file.strip():
+                        console.print(f"[green]{idx}.[/green] {file.strip()}")
+                
+                choice = console.input("\n[bold yellow]Select file number to copy (or press Enter to skip): [/bold yellow]").strip()
+                if choice.isdigit() and 1 <= int(choice) <= len(found_files):
+                    custom_log_file = found_files[int(choice)-1].strip()
+                    console.print(f"[cyan]Copying from: {custom_log_file}[/cyan]")
+                    
+                    copy_result = subprocess.run(
+                        ["adb", "-s", device_id, "pull", custom_log_file, destination_file], 
+                        capture_output=True, 
+                        text=True
+                    )
+                    
+                    if copy_result.returncode == 0 and os.path.exists(destination_file):
+                        file_size = os.path.getsize(destination_file)
+                        console.print(f"[green]File successfully copied to: {destination_file}[/green]")
+                        console.print(f"[green]File size: {file_size} bytes[/green]")
+                        log_found = True
+                    else:
+                        console.print("[red]Failed to copy the selected file.[/red]")
+            else:
+                console.print("[red]No Bluetooth log files found after searching.[/red]")
+                
+            if not log_found:
+                console.print("[yellow]You may need to enable Bluetooth HCI snoop logging in your device's Developer Options.[/yellow]")
+                console.print("[yellow]Steps to enable Bluetooth HCI logging:[/yellow]")
+                console.print("[cyan]1. Enable Developer Options (tap Build Number 7 times in About Phone)[/cyan]")
+                console.print("[cyan]2. Go to Developer Options[/cyan]")
+                console.print("[cyan]3. Find and enable 'Enable Bluetooth HCI snoop log'[/cyan]")
+                console.print("[cyan]4. Use Bluetooth for a while and try copying the log again[/cyan]")
+                
+                # Offer to input a custom path
+                custom_path = console.input("\n[bold yellow]Enter a custom path to look for the log file (or press Enter to skip): [/bold yellow]").strip()
+                if custom_path:
+                    console.print(f"[cyan]Checking custom path: {custom_path}[/cyan]")
+                    
+                    check_cmd = f"adb -s {device_id} shell '[ -f {custom_path} ] && echo \"EXISTS\" || echo \"NOT_FOUND\"'"
+                    check_result = subprocess.run(check_cmd, shell=True, capture_output=True, text=True)
+                    
+                    if "EXISTS" in check_result.stdout:
+                        console.print(f"[green]Log file found at custom path! Copying from: {custom_path}[/green]")
+                        
+                        copy_result = subprocess.run(
+                            ["adb", "-s", device_id, "pull", custom_path, destination_file], 
+                            capture_output=True, 
+                            text=True
+                        )
+                        
+                        if copy_result.returncode == 0 and os.path.exists(destination_file):
+                            file_size = os.path.getsize(destination_file)
+                            console.print(f"[green]File successfully copied to: {destination_file}[/green]")
+                            console.print(f"[green]File size: {file_size} bytes[/green]")
+                            log_found = True
+                        else:
+                            console.print("[red]Failed to copy from custom path.[/red]")
+                    else:
+                        console.print("[red]File not found at the custom path.[/red]")
 
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error: {e}[/red]")
+        console.print(f"[red]ADB command error: {e}[/red]")
+        console.print(f"[yellow]Error details: {e.stdout if hasattr(e, 'stdout') else 'No details available'}[/yellow]")
     except FileNotFoundError:
         console.print("[red]ADB command not found! Ensure ADB is installed and added to your system PATH.[/red]")
+    except Exception as e:
+        console.print(f"[red]Unexpected error: {str(e)}[/red]")
 
     console.input("\n[bold yellow]Press Enter to return to Bluetooth Trace Analysis menu...[/bold yellow]")
 
@@ -1508,6 +1648,359 @@ def bluetooth_trace_file_analysis():
         else:
             console.print("[red]Invalid option. Please try again.[/red]")
 
+def execute_remote_find():
+    """Execute find command on remote terminal and store results locally"""
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]Remote Terminal Find Operation[/bold cyan]", box=box.DOUBLE))
+
+    # Check if project path is set
+    if not defaults['project_path']:
+        console.print("[red]Please select a project first![/red]")
+        console.input("[bold yellow]Press Enter to return to main menu...[/bold yellow]")
+        return
+
+    try:
+        # Get the current pane ID before creating new pane
+        current_pane = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'], 
+                                    capture_output=True, text=True, check=True).stdout.strip()
+        
+        # Create new vertical pane on the right
+        subprocess.run(['tmux', 'split-window', '-h'], check=True)
+        
+        # Get the new (right) pane ID
+        right_pane = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'], 
+                                  capture_output=True, text=True, check=True).stdout.strip()
+        
+        # Select back the original pane
+        subprocess.run(['tmux', 'select-pane', '-t', current_pane], check=True)
+        
+        # Display tmux navigation instructions in left pane
+        navigation_table = Table(title="TMux Navigation Commands", box=box.SIMPLE_HEAVY)
+        navigation_table.add_column("Command", style="bold cyan", justify="right")
+        navigation_table.add_column("Description", style="green")
+        
+        navigation_table.add_row("Ctrl+b →", "Move to right pane")
+        navigation_table.add_row("Ctrl+b ←", "Move to left pane")
+        navigation_table.add_row("Ctrl+b o", "Switch to next pane")
+        navigation_table.add_row("Ctrl+b ;", "Toggle last active pane")
+        navigation_table.add_row("Ctrl+b x", "Close current pane")
+        navigation_table.add_row("Ctrl+b q", "Show pane numbers")
+        navigation_table.add_row("Ctrl+b z", "Toggle pane zoom")
+        
+        console.print("\n")
+        console.print(navigation_table)
+        console.print("\n")
+        
+        # Instructions for remote session
+        console.print(Panel.fit(
+            "[yellow]Instructions:[/yellow]\n\n"
+            "1. Use [bold cyan]Ctrl+b →[/bold cyan] to move to the right pane\n"
+            "2. Set up your remote session\n"
+            "3. Use [bold cyan]Ctrl+b ←[/bold cyan] to return to this pane\n"
+            "4. Confirm when ready to proceed",
+            title="Setup Guide",
+            box=box.ROUNDED
+        ))
+        
+        ready = console.input("\n[bold yellow]Is the remote session ready? (y/N): [/bold yellow]").strip().lower()
+        
+        if ready != 'y':
+            console.print("[red]Operation cancelled.[/red]")
+            # Ask if user wants to close the right pane
+            close_pane = console.input("[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+            if close_pane != 'n':
+                subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+            return
+
+        # Display find operation options after remote session is ready
+        find_menu = Table(box=box.SIMPLE_HEAVY)
+        find_menu.add_column("Option", justify="center", style="bold magenta")
+        find_menu.add_column("Description", style="cyan")
+        find_menu.add_row("1", "Manual Find (Custom path and pattern)")
+        find_menu.add_row("2", "Auto Find (Multiple security-related files)")
+        find_menu.add_row("3", "Return to Main Menu")
+        
+        console.print("\n")
+        console.print(find_menu)
+        find_choice = console.input("\n[bold yellow]Select find operation (1-3): [/bold yellow]").strip()
+
+        if find_choice not in ['1', '2']:
+            # Ask if user wants to close the right pane
+            close_pane = console.input("[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+            if close_pane != 'n':
+                subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+            return
+
+        # Generate timestamp for default filename
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        
+        if find_choice == '1':
+            # Manual Find
+            search_path = console.input("[bold yellow]Enter remote search path (e.g., /home/user): [/bold yellow]").strip()
+            search_pattern = console.input("[bold yellow]Enter search pattern (e.g., '*.txt'): [/bold yellow]").strip()
+
+            if not search_path or not search_pattern:
+                console.print("[red]Search path and pattern are required![/red]")
+                # Ask if user wants to close the right pane
+                close_pane = console.input("[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+                if close_pane != 'n':
+                    subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+                return
+
+            default_filename = f'manual_find_{timestamp}.txt'
+            find_cmd = f"find {search_path} -name '{search_pattern}'"
+            
+        else:
+            # First check for required packages
+            try:
+                import pandas as pd
+                import xlsxwriter
+            except ImportError as e:
+                console.print("[red]Missing required packages. Installing them now...[/red]")
+                try:
+                    subprocess.run(['pip3', 'install', 'pandas', 'xlsxwriter'], check=True)
+                    console.print("[green]Successfully installed required packages![/green]")
+                    import pandas as pd
+                    import xlsxwriter
+                except Exception as install_error:
+                    console.print(f"[red]Failed to install packages automatically. Please run:[/red]")
+                    console.print("[yellow]pip3 install pandas xlsxwriter[/yellow]")
+                    console.print("\n[red]Falling back to CSV format...[/red]")
+                    use_excel = False
+                else:
+                    use_excel = True
+            else:
+                use_excel = True
+
+            # Auto Find (Multiple security-related files)
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            default_filename = f'security_files_{timestamp}.xlsx' if use_excel else f'security_files_{timestamp}.csv'
+            
+            # Define file patterns and their descriptions
+            file_patterns = {
+                '*.conf': 'Configuration Files',
+                '*.pem': 'PEM Certificates/Keys',
+                '*.crt': 'CRT Certificates',
+                '*.key': 'Private Keys',
+                '*.cert': 'Certificates'
+            }
+            
+            # Dictionary to store results for each pattern
+            results_dict = {}
+            
+            console.print("[cyan]Starting security files search...[/cyan]")
+            
+            # Create Excel file at the start
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            excel_file = os.path.join(defaults['project_path'], f'security_files_{timestamp}.xlsx')
+            console.print(f"\n[cyan]Creating Excel file: {excel_file}[/cyan]")
+
+            # Dictionary to store workbook and formats for reuse
+            excel_objects = {
+                'writer': pd.ExcelWriter(excel_file, engine='xlsxwriter'),
+                'header_format': None,
+                'cell_format': None
+            }
+
+            try:
+                # Initialize formats
+                workbook = excel_objects['writer'].book
+                excel_objects['header_format'] = workbook.add_format({
+                    'bold': True,
+                    'bg_color': '#4F81BD',
+                    'font_color': 'white',
+                    'border': 1,
+                    'text_wrap': True,
+                    'valign': 'vcenter',
+                    'align': 'center'
+                })
+                excel_objects['cell_format'] = workbook.add_format({
+                    'text_wrap': True,
+                    'valign': 'vcenter',
+                    'border': 1
+                })
+
+                # Execute find command for each pattern
+                for i, (pattern, description) in enumerate(file_patterns.items(), 1):
+                    console.print(f"\n[bold cyan]Search {i} of {len(file_patterns)}[/bold cyan]")
+                    console.print(Panel.fit(
+                        f"[yellow]Searching for {description} ({pattern})[/yellow]",
+                        title="Current Search",
+                        box=box.ROUNDED
+                    ))
+                    
+                    # Clear the right pane before new search
+                    subprocess.run(['tmux', 'send-keys', '-t', right_pane, 'clear', 'C-m'], check=True)
+                    
+                    find_cmd = f"find / -type f -name '{pattern}' 2>/dev/null"
+                    
+                    # Send the find command to the right pane
+                    subprocess.run(['tmux', 'send-keys', '-t', right_pane, find_cmd, 'C-m'], check=True)
+                    
+                    # Wait for user confirmation that search is complete
+                    while True:
+                        complete = console.input(
+                            "\n[bold yellow]Is the search complete? (y/n/quit): [/bold yellow]"
+                        ).strip().lower()
+                        
+                        if complete == 'y':
+                            break
+                        elif complete == 'n':
+                            console.print("[cyan]Waiting for search to complete...[/cyan]")
+                            time.sleep(2)
+                        elif complete == 'quit':
+                            console.print("[yellow]Stopping search sequence...[/yellow]")
+                            excel_objects['writer'].close()
+                            # Ask if user wants to close the right pane
+                            close_pane = console.input("\n[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+                            if close_pane != 'n':
+                                subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+                            return
+                        else:
+                            console.print("[red]Invalid input. Please enter 'y', 'n', or 'quit'[/red]")
+                    
+                    # Capture the output
+                    result = subprocess.run(['tmux', 'capture-pane', '-t', right_pane, '-p'],
+                                         capture_output=True, text=True, check=True)
+                    
+                    # Process the results
+                    files = [line.strip() for line in result.stdout.split('\n') 
+                            if line.strip() and pattern[1:] in line]
+                    
+                    # Show current search results
+                    console.print(f"\n[green]Found {len(files)} {description}[/green]")
+                    
+                    # Create DataFrame for current results
+                    if files:
+                        df = pd.DataFrame({
+                            'File Path': files,
+                            'File Type': [pattern] * len(files),
+                            'Last Modified': [
+                                subprocess.run(
+                                    ['tmux', 'send-keys', '-t', right_pane, f'stat -c %y "{f}"', 'C-m'],
+                                    capture_output=True, text=True, check=True
+                                ).stdout.strip() if os.path.exists(f) else 'N/A'
+                                for f in files
+                            ]
+                        })
+                        
+                        # Save to sheet in Excel file
+                        sheet_name = ''.join(c for c in description if c.isalnum())[:31]
+                        df.to_excel(excel_objects['writer'], sheet_name=sheet_name, index=False)
+                        
+                        # Format the sheet
+                        worksheet = excel_objects['writer'].sheets[sheet_name]
+                        worksheet.set_column('A:A', 60)  # File Path
+                        worksheet.set_column('B:B', 15)  # File Type
+                        worksheet.set_column('C:C', 25)  # Last Modified
+                        
+                        # Apply header format
+                        for col_num, value in enumerate(df.columns.values):
+                            worksheet.write(0, col_num, value, excel_objects['header_format'])
+                        
+                        # Apply cell format to data
+                        for row_num in range(len(df)):
+                            for col_num in range(len(df.columns)):
+                                worksheet.write(row_num + 1, col_num, 
+                                             df.iloc[row_num, col_num], 
+                                             excel_objects['cell_format'])
+                        
+                        # Add autofilter
+                        worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
+                        
+                        # Store results for summary
+                        results_dict[description] = {
+                            'File Type': pattern,
+                            'Count': len(files)
+                        }
+                    
+                    # If not the last search, ask user to continue
+                    if i < len(file_patterns):
+                        while True:
+                            next_search = console.input(
+                                "\n[bold yellow]Start next search? (y/n/quit): [/bold yellow]"
+                            ).strip().lower()
+                            
+                            if next_search == 'y':
+                                break
+                            elif next_search == 'n':
+                                console.print("[cyan]Waiting to start next search...[/cyan]")
+                                time.sleep(2)
+                            elif next_search == 'quit':
+                                console.print("[yellow]Stopping search sequence...[/yellow]")
+                                excel_objects['writer'].close()
+                                # Ask if user wants to close the right pane
+                                close_pane = console.input("\n[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+                                if close_pane != 'n':
+                                    subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+                                return
+                            else:
+                                console.print("[red]Invalid input. Please enter 'y', 'n', or 'quit'[/red]")
+
+                # Create summary sheet
+                summary_data = {
+                    'File Type': [],
+                    'Files Found': [],
+                    'Description': []
+                }
+                
+                for desc, data in results_dict.items():
+                    summary_data['File Type'].append(data['File Type'])
+                    summary_data['Files Found'].append(data['Count'])
+                    summary_data['Description'].append(desc)
+                
+                summary_df = pd.DataFrame(summary_data)
+                summary_df.to_excel(excel_objects['writer'], sheet_name='Summary', index=False)
+                
+                # Format summary sheet
+                summary_sheet = excel_objects['writer'].sheets['Summary']
+                summary_sheet.set_column('A:A', 15)
+                summary_sheet.set_column('B:B', 12)
+                summary_sheet.set_column('C:C', 30)
+                
+                for col_num, value in enumerate(summary_df.columns.values):
+                    summary_sheet.write(0, col_num, value, excel_objects['header_format'])
+
+                # Save and close Excel file
+                excel_objects['writer'].close()
+                console.print(f"\n[green]All results saved to: {excel_file}[/green]")
+
+                # Display summary table
+                console.print("\n[bold cyan]Search Summary:[/bold cyan]")
+                summary_table = Table(box=box.SIMPLE_HEAVY)
+                summary_table.add_column("File Type", style="yellow")
+                summary_table.add_column("Files Found", style="cyan", justify="right")
+                summary_table.add_column("Description", style="green")
+                
+                for i in range(len(summary_data['File Type'])):
+                    summary_table.add_row(
+                        summary_data['File Type'][i],
+                        str(summary_data['Files Found'][i]),
+                        summary_data['Description'][i]
+                    )
+                
+                console.print(summary_table)
+
+            except Exception as e:
+                console.print(f"[red]Error during file operations: {str(e)}[/red]")
+                try:
+                    excel_objects['writer'].close()
+                except:
+                    pass
+
+            # Ask if user wants to close the right pane
+            close_pane = console.input("\n[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+            if close_pane != 'n':
+                subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+                console.print("[green]Right pane closed.[/green]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error executing tmux commands: {str(e)}[/red]")
+    except Exception as e:
+        console.print(f"[red]Unexpected error: {str(e)}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
+
 def main_menu():
     while True:
         clear_screen()
@@ -1531,7 +2024,8 @@ def main_menu():
             ("5", " Flow Analysis", "blue"),
             ("6", " Bluetooth Trace File Analysis", "red"),
             ("7", " Nessus Scan Management", "cyan"),
-            ("8", " Exit", "red"),
+            ("8", " Remote Terminal Find", "green"),  # New menu item
+            ("9", " Exit", "red"),
         ]
 
         # Constructing the Menu Panel
@@ -1552,7 +2046,7 @@ def main_menu():
 
         # Input Prompt with Better UX
         choice = console.input(
-            "\n[bold yellow]Enter choice (1-7) or [bold red]Q[/bold red] to Quit: [/bold yellow]"
+            "\n[bold yellow]Enter choice (1-9) or [bold red]Q[/bold red] to Quit: [/bold yellow]"
         ).strip().lower()
 
         # Handling User Choices with Correct Routing
@@ -1570,7 +2064,9 @@ def main_menu():
             bluetooth_trace_file_analysis()
         elif choice == "7":
             nessus_scan_management()
-        elif choice == "8" or choice == 'q':
+        elif choice == "8":
+            execute_remote_find()
+        elif choice == "9" or choice == 'q':
             console.print(Panel.fit("[bold cyan]Exiting...[/bold cyan]", box=box.DOUBLE))
             sys.exit(0)
         else:
