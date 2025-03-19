@@ -1682,10 +1682,8 @@ def execute_remote_find():
         navigation_table.add_row("Ctrl+b →", "Move to right pane")
         navigation_table.add_row("Ctrl+b ←", "Move to left pane")
         navigation_table.add_row("Ctrl+b o", "Switch to next pane")
-        navigation_table.add_row("Ctrl+b ;", "Toggle last active pane")
         navigation_table.add_row("Ctrl+b x", "Close current pane")
-        navigation_table.add_row("Ctrl+b q", "Show pane numbers")
-        navigation_table.add_row("Ctrl+b z", "Toggle pane zoom")
+        navigation_table.add_row("Ctrl+d", "Close current pane")
         
         console.print("\n")
         console.print(navigation_table)
@@ -1716,7 +1714,7 @@ def execute_remote_find():
         find_menu = Table(box=box.SIMPLE_HEAVY)
         find_menu.add_column("Option", justify="center", style="bold magenta")
         find_menu.add_column("Description", style="cyan")
-        find_menu.add_row("1", "Manual Find (Custom path and pattern)")
+        find_menu.add_row("1", "SMACK Access Control Check (Custom path)")
         find_menu.add_row("2", "Auto Find (Multiple security-related files)")
         find_menu.add_row("3", "Return to Main Menu")
         
@@ -1735,21 +1733,77 @@ def execute_remote_find():
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
         if find_choice == '1':
-            # Manual Find
-            search_path = console.input("[bold yellow]Enter remote search path (e.g., /home/user): [/bold yellow]").strip()
-            search_pattern = console.input("[bold yellow]Enter search pattern (e.g., '*.txt'): [/bold yellow]").strip()
-
-            if not search_path or not search_pattern:
-                console.print("[red]Search path and pattern are required![/red]")
-                # Ask if user wants to close the right pane
-                close_pane = console.input("[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
-                if close_pane != 'n':
-                    subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
-                return
-
-            default_filename = f'manual_find_{timestamp}.txt'
-            find_cmd = f"find {search_path} -name '{search_pattern}'"
+            # Manual Find - SMACK Access Control Check
+            smack_results = []  # Store results in a list instead of as an attribute
             
+            while True:
+                file_path = console.input("[bold yellow]Enter file path to check SMACK access: [/bold yellow]").strip()
+                
+                if not file_path:
+                    console.print("[red]File path is required![/red]")
+                    continue
+
+                # Clear the right pane before new check
+                subprocess.run(['tmux', 'send-keys', '-t', right_pane, 'clear', 'C-m'], check=True)
+                
+                # Execute ls -Z command
+                smack_cmd = f"ls -Z {file_path}"
+                subprocess.run(['tmux', 'send-keys', '-t', right_pane, smack_cmd, 'C-m'], check=True)
+                
+                # Wait for command execution
+                time.sleep(1)
+                
+                # Capture the output
+                result = subprocess.run(['tmux', 'capture-pane', '-t', right_pane, '-p'],
+                                     capture_output=True, text=True, check=True)
+                
+                output = result.stdout.strip()
+                if "No such file or directory" in output:
+                    console.print(f"[red]File not found: {file_path}[/red]")
+                elif not output or "Operation not permitted" in output:
+                    console.print(f"[red]No SMACK access information available for: {file_path}[/red]")
+                else:
+                    console.print(f"[green]SMACK access information found for: {file_path}[/green]")
+                    
+                # Store results regardless of output to track attempted checks
+                smack_results.append({
+                    'file_path': file_path,
+                    'output': output
+                })
+                
+                # Ask if user wants to check more files
+                check_more = console.input("\n[bold yellow]Check another file? (y/n): [/bold yellow]").strip().lower()
+                if check_more != 'y':
+                    # Ask if user wants to close the right pane
+                    close_pane = console.input("[bold yellow]Close the right pane? (Y/n): [/bold yellow]").strip().lower()
+                    if close_pane != 'n':
+                        subprocess.run(['tmux', 'kill-pane', '-t', right_pane], check=True)
+                        console.print("[green]Right pane closed.[/green]")
+                    break
+
+            # Export results to file
+            if smack_results:  # If we have any results (successful or not)
+                timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                output_file = os.path.join(defaults['project_path'], f'access_check_{timestamp}.txt')
+                
+                try:
+                    with open(output_file, 'w') as f:
+                        f.write("File Access Control Check Results\n")
+                        f.write("=" * 50 + "\n\n")
+                        for result in smack_results:
+                            f.write(f"File Path: {result['file_path']}\n")
+                            f.write("Output:\n")
+                            if "No such file or directory" in result['output']:
+                                f.write("File not found\n")
+                            elif not result['output'] or "Operation not permitted" in result['output']:
+                                f.write("No access information available\n")
+                            else:
+                                f.write(f"{result['output']}\n")
+                            f.write("-" * 50 + "\n\n")
+                    
+                    console.print(f"[green]Results exported to: {output_file}[/green]")
+                except Exception as e:
+                    console.print(f"[red]Error exporting results: {str(e)}[/red]")
         else:
             # First check for required packages
             try:
@@ -2024,7 +2078,7 @@ def main_menu():
             ("5", " Flow Analysis", "blue"),
             ("6", " Bluetooth Trace File Analysis", "red"),
             ("7", " Nessus Scan Management", "cyan"),
-            ("8", " Remote Terminal Find", "green"),  # New menu item
+            ("8", " SMACK and Security Files Search", "green"), 
             ("9", " Exit", "red"),
         ]
 
