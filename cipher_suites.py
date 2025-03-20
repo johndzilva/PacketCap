@@ -1,356 +1,2106 @@
 # cipher_suites.py
 # This file contains a mapping of TLS cipher suite codes to their human‑readable names,
-# along with a flag indicating whether the suite is recommended by IANA (True) or not (False).
+# along with a flag indicating whether the suite is recommended by IANA and BSI (True) or not (False).
 
 CIPHER_SUITES = {
-    0x0000: ('TLS_NULL_WITH_NULL_NULL', False),
-    0x0001: ('TLS_RSA_WITH_NULL_MD5', False),
-    0x0002: ('TLS_RSA_WITH_NULL_SHA', False),
-    0x0003: ('TLS_RSA_EXPORT_WITH_RC4_40_MD5', False),
-    0x0004: ('TLS_RSA_WITH_RC4_128_MD5', False),
-    0x0005: ('TLS_RSA_WITH_RC4_128_SHA', False),
-    0x0006: ('TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5', False),
-    0x0007: ('TLS_RSA_WITH_IDEA_CBC_SHA', False),
-    0x0008: ('TLS_RSA_EXPORT_WITH_DES40_CBC_SHA', False),
-    0x0009: ('TLS_RSA_WITH_DES_CBC_SHA', False),
-    0x000A: ('TLS_RSA_WITH_3DES_EDE_CBC_SHA', False),
-    0x000B: ('TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA', False),
-    0x000C: ('TLS_DH_DSS_WITH_DES_CBC_SHA', False),
-    0x000D: ('TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA', False),
-    0x000E: ('TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA', False),
-    0x000F: ('TLS_DH_RSA_WITH_DES_CBC_SHA', False),
-    0x0010: ('TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA', False),
-    0x0011: ('TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA', False),
-    0x0012: ('TLS_DHE_DSS_WITH_DES_CBC_SHA', False),
-    0x0013: ('TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA', False),
-    0x0014: ('TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA', False),
-    0x0015: ('TLS_DHE_RSA_WITH_DES_CBC_SHA', False),
-    0x0016: ('TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA', False),
-    0x0017: ('TLS_DH_anon_EXPORT_WITH_RC4_40_MD5', False),
-    0x0018: ('TLS_DH_anon_WITH_RC4_128_MD5', False),
-    0x0019: ('TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA', False),
-    0x001A: ('TLS_DH_anon_WITH_DES_CBC_SHA', False),
-    0x001B: ('TLS_DH_anon_WITH_3DES_EDE_CBC_SHA', False),
-    0x001E: ('TLS_KRB5_WITH_DES_CBC_SHA', False),
-    0x001F: ('TLS_KRB5_WITH_3DES_EDE_CBC_SHA', False),
-    0x0020: ('TLS_KRB5_WITH_RC4_128_SHA', False),
-    0x0021: ('TLS_KRB5_WITH_IDEA_CBC_SHA', False),
-    0x0022: ('TLS_KRB5_WITH_DES_CBC_MD5', False),
-    0x0023: ('TLS_KRB5_WITH_3DES_EDE_CBC_MD5', False),
-    0x0024: ('TLS_KRB5_WITH_RC4_128_MD5', False),
-    0x0025: ('TLS_KRB5_WITH_IDEA_CBC_MD5', False),
-    0x0026: ('TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA', False),
-    0x0027: ('TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA', False),
-    0x0028: ('TLS_KRB5_EXPORT_WITH_RC4_40_SHA', False),
-    0x0029: ('TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5', False),
-    0x002A: ('TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5', False),
-    0x002B: ('TLS_KRB5_EXPORT_WITH_RC4_40_MD5', False),
-    0x002C: ('TLS_PSK_WITH_NULL_SHA', False),
-    0x002D: ('TLS_DHE_PSK_WITH_NULL_SHA', False),
-    0x002E: ('TLS_RSA_PSK_WITH_NULL_SHA', False),
-    0x002F: ('TLS_RSA_WITH_AES_128_CBC_SHA', False),
-    0x0030: ('TLS_DH_DSS_WITH_AES_128_CBC_SHA', False),
-    0x0031: ('TLS_DH_RSA_WITH_AES_128_CBC_SHA', False),
-    0x0032: ('TLS_DHE_DSS_WITH_AES_128_CBC_SHA', False),
-    0x0033: ('TLS_DHE_RSA_WITH_AES_128_CBC_SHA', False),
-    0x0034: ('TLS_DH_anon_WITH_AES_128_CBC_SHA', False),
-    0x0035: ('TLS_RSA_WITH_AES_256_CBC_SHA', False),
-    0x0036: ('TLS_DH_DSS_WITH_AES_256_CBC_SHA', False),
-    0x0037: ('TLS_DH_RSA_WITH_AES_256_CBC_SHA', False),
-    0x0038: ('TLS_DHE_DSS_WITH_AES_256_CBC_SHA', False),
-    0x0039: ('TLS_DHE_RSA_WITH_AES_256_CBC_SHA', False),
-    0x003A: ('TLS_DH_anon_WITH_AES_256_CBC_SHA', False),
-    0x003B: ('TLS_RSA_WITH_NULL_SHA256', False),
-    0x003C: ('TLS_RSA_WITH_AES_128_CBC_SHA256', False),
-    0x003D: ('TLS_RSA_WITH_AES_256_CBC_SHA256', False),
-    0x003E: ('TLS_DH_DSS_WITH_AES_128_CBC_SHA256', False),
-    0x003F: ('TLS_DH_RSA_WITH_AES_128_CBC_SHA256', False),
-    0x0040: ('TLS_DHE_DSS_WITH_AES_128_CBC_SHA256', False),
-    0x0041: ('TLS_RSA_WITH_CAMELLIA_128_CBC_SHA', False),
-    0x0042: ('TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA', False),
-    0x0043: ('TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA', False),
-    0x0044: ('TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA', False),
-    0x0045: ('TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA', False),
-    0x0046: ('TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA', False),
-    0x0067: ('TLS_DHE_RSA_WITH_AES_128_CBC_SHA256', False),
-    0x0068: ('TLS_DH_DSS_WITH_AES_256_CBC_SHA256', False),
-    0x0069: ('TLS_DH_RSA_WITH_AES_256_CBC_SHA256', False),
-    0x006A: ('TLS_DHE_DSS_WITH_AES_256_CBC_SHA256', False),
-    0x006B: ('TLS_DHE_RSA_WITH_AES_256_CBC_SHA256', False),
-    0x006C: ('TLS_DH_anon_WITH_AES_128_CBC_SHA256', False),
-    0x006D: ('TLS_DH_anon_WITH_AES_256_CBC_SHA256', False),
-    0x0084: ('TLS_RSA_WITH_CAMELLIA_256_CBC_SHA', False),
-    0x0085: ('TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA', False),
-    0x0086: ('TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA', False),
-    0x0087: ('TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA', False),
-    0x0088: ('TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA', False),
-    0x0089: ('TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA', False),
-    0x008A: ('TLS_PSK_WITH_RC4_128_SHA', False),
-    0x008B: ('TLS_PSK_WITH_3DES_EDE_CBC_SHA', False),
-    0x008C: ('TLS_PSK_WITH_AES_128_CBC_SHA', False),
-    0x008D: ('TLS_PSK_WITH_AES_256_CBC_SHA', False),
-    0x008E: ('TLS_DHE_PSK_WITH_RC4_128_SHA', False),
-    0x008F: ('TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA', False),
-    0x0090: ('TLS_DHE_PSK_WITH_AES_128_CBC_SHA', False),
-    0x0091: ('TLS_DHE_PSK_WITH_AES_256_CBC_SHA', False),
-    0x0092: ('TLS_RSA_PSK_WITH_RC4_128_SHA', False),
-    0x0093: ('TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA', False),
-    0x0094: ('TLS_RSA_PSK_WITH_AES_128_CBC_SHA', False),
-    0x0095: ('TLS_RSA_PSK_WITH_AES_256_CBC_SHA', False),
-    0x0096: ('TLS_RSA_WITH_SEED_CBC_SHA', False),
-    0x0097: ('TLS_DH_DSS_WITH_SEED_CBC_SHA', False),
-    0x0098: ('TLS_DH_RSA_WITH_SEED_CBC_SHA', False),
-    0x0099: ('TLS_DHE_DSS_WITH_SEED_CBC_SHA', False),
-    0x009A: ('TLS_DHE_RSA_WITH_SEED_CBC_SHA', False),
-    0x009B: ('TLS_DH_anon_WITH_SEED_CBC_SHA', False),
-    0x009C: ('TLS_RSA_WITH_AES_128_GCM_SHA256', False),
-    0x009D: ('TLS_RSA_WITH_AES_256_GCM_SHA384', False),
-    0x009E: ('TLS_DHE_RSA_WITH_AES_128_GCM_SHA256', True),
-    0x009F: ('TLS_DHE_RSA_WITH_AES_256_GCM_SHA384', True),
-    0x00A0: ('TLS_DH_RSA_WITH_AES_128_GCM_SHA256', False),
-    0x00A1: ('TLS_DH_RSA_WITH_AES_256_GCM_SHA384', False),
-    0x00A2: ('TLS_DHE_DSS_WITH_AES_128_GCM_SHA256', False),
-    0x00A3: ('TLS_DHE_DSS_WITH_AES_256_GCM_SHA384', False),
-    0x00A4: ('TLS_DH_DSS_WITH_AES_128_GCM_SHA256', False),
-    0x00A5: ('TLS_DH_DSS_WITH_AES_256_GCM_SHA384', False),
-    0x00A6: ('TLS_DH_anon_WITH_AES_128_GCM_SHA256', False),
-    0x00A7: ('TLS_DH_anon_WITH_AES_256_GCM_SHA384', False),
-    0x00A8: ('TLS_PSK_WITH_AES_128_GCM_SHA256', False),
-    0x00A9: ('TLS_PSK_WITH_AES_256_GCM_SHA384', False),
-    0x00AA: ('TLS_DHE_PSK_WITH_AES_128_GCM_SHA256', True),
-    0x00AB: ('TLS_DHE_PSK_WITH_AES_256_GCM_SHA384', True),
-    0x00AC: ('TLS_RSA_PSK_WITH_AES_128_GCM_SHA256', False),
-    0x00AD: ('TLS_RSA_PSK_WITH_AES_256_GCM_SHA384', False),
-    0x00AE: ('TLS_PSK_WITH_AES_128_CBC_SHA256', False),
-    0x00AF: ('TLS_PSK_WITH_AES_256_CBC_SHA384', False),
-    0x00B0: ('TLS_PSK_WITH_NULL_SHA256', False),
-    0x00B1: ('TLS_PSK_WITH_NULL_SHA384', False),
-    0x00B2: ('TLS_DHE_PSK_WITH_AES_128_CBC_SHA256', False),
-    0x00B3: ('TLS_DHE_PSK_WITH_AES_256_CBC_SHA384', False),
-    0x00B4: ('TLS_DHE_PSK_WITH_NULL_SHA256', False),
-    0x00B5: ('TLS_DHE_PSK_WITH_NULL_SHA384', False),
-    0x00B6: ('TLS_RSA_PSK_WITH_AES_128_CBC_SHA256', False),
-    0x00B7: ('TLS_RSA_PSK_WITH_AES_256_CBC_SHA384', False),
-    0x00B8: ('TLS_RSA_PSK_WITH_NULL_SHA256', False),
-    0x00B9: ('TLS_RSA_PSK_WITH_NULL_SHA384', False),
-    0x00BA: ('TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0x00BB: ('TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0x00BC: ('TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0x00BD: ('TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0x00BE: ('TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0x00BF: ('TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0x00C0: ('TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256', False),
-    0x00C1: ('TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256', False),
-    0x00C2: ('TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256', False),
-    0x00C3: ('TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256', False),
-    0x00C4: ('TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256', False),
-    0x00C5: ('TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256', False),
-    0x00C6: ('TLS_SM4_GCM_SM3', False),
-    0x00C7: ('TLS_SM4_CCM_SM3', False),
-    0x1301: ('TLS_AES_128_GCM_SHA256', True),
-    0x1302: ('TLS_AES_256_GCM_SHA384', True),
-    0x1303: ('TLS_CHACHA20_POLY1305_SHA256', True),
-    0x1304: ('TLS_AES_128_CCM_SHA256', True),
-    0x1305: ('TLS_AES_128_CCM_8_SHA256', False),
-    0x1306: ('TLS_AEGIS_256_SHA512', False),
-    0x1307: ('TLS_AEGIS_128L_SHA256', False),
-    0xC001: ('TLS_ECDH_ECDSA_WITH_NULL_SHA', False),
-    0xC002: ('TLS_ECDH_ECDSA_WITH_RC4_128_SHA', False),
-    0xC003: ('TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA', False),
-    0xC004: ('TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA', False),
-    0xC005: ('TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA', False),
-    0xC006: ('TLS_ECDHE_ECDSA_WITH_NULL_SHA', False),
-    0xC007: ('TLS_ECDHE_ECDSA_WITH_RC4_128_SHA', False),
-    0xC008: ('TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA', False),
-    0xC009: ('TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA', False),
-    0xC00A: ('TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA', False),
-    0xC00B: ('TLS_ECDH_RSA_WITH_NULL_SHA', False),
-    0xC00C: ('TLS_ECDH_RSA_WITH_RC4_128_SHA', False),
-    0xC00D: ('TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA', False),
-    0xC00E: ('TLS_ECDH_RSA_WITH_AES_128_CBC_SHA', False),
-    0xC00F: ('TLS_ECDH_RSA_WITH_AES_256_CBC_SHA', False),
-    0xC010: ('TLS_ECDHE_RSA_WITH_NULL_SHA', False),
-    0xC011: ('TLS_ECDHE_RSA_WITH_RC4_128_SHA', False),
-    0xC012: ('TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA', False),
-    0xC013: ('TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA', False),
-    0xC014: ('TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA', False),
-    0xC015: ('TLS_ECDH_anon_WITH_NULL_SHA', False),
-    0xC016: ('TLS_ECDH_anon_WITH_RC4_128_SHA', False),
-    0xC017: ('TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA', False),
-    0xC018: ('TLS_ECDH_anon_WITH_AES_128_CBC_SHA', False),
-    0xC019: ('TLS_ECDH_anon_WITH_AES_256_CBC_SHA', False),
-    0xC01A: ('TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA', False),
-    0xC01B: ('TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA', False),
-    0xC01C: ('TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA', False),
-    0xC01D: ('TLS_SRP_SHA_WITH_AES_128_CBC_SHA', False),
-    0xC01E: ('TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA', False),
-    0xC01F: ('TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA', False),
-    0xC020: ('TLS_SRP_SHA_WITH_AES_256_CBC_SHA', False),
-    0xC021: ('TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA', False),
-    0xC022: ('TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA', False),
-    0xC023: ('TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256', False),
-    0xC024: ('TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384', False),
-    0xC025: ('TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256', False),
-    0xC026: ('TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384', False),
-    0xC027: ('TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', False),
-    0xC028: ('TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', False),
-    0xC029: ('TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256', False),
-    0xC02A: ('TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384', False),
-    0xC02B: ('TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256', True),
-    0xC02C: ('TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384', True),
-    0xC02D: ('TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256', False),
-    0xC02E: ('TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384', False),
-    0xC02F: ('TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', True),
-    0xC030: ('TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384', True),
-    0xC031: ('TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256', False),
-    0xC032: ('TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384', False),
-    0xC033: ('TLS_ECDHE_PSK_WITH_RC4_128_SHA', False),
-    0xC034: ('TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA', False),
-    0xC035: ('TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA', False),
-    0xC036: ('TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA', False),
-    0xC037: ('TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256', False),
-    0xC038: ('TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384', False),
-    0xC039: ('TLS_ECDHE_PSK_WITH_NULL_SHA', False),
-    0xC03A: ('TLS_ECDHE_PSK_WITH_NULL_SHA256', False),
-    0xC03B: ('TLS_ECDHE_PSK_WITH_NULL_SHA384', False),
-    0xC03C: ('TLS_RSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC03D: ('TLS_RSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC03E: ('TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256', False),
-    0xC03F: ('TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384', False),
-    0xC040: ('TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC041: ('TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC042: ('TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256', False),
-    0xC043: ('TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384', False),
-    0xC044: ('TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC045: ('TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC046: ('TLS_DH_anon_WITH_ARIA_128_CBC_SHA256', False),
-    0xC047: ('TLS_DH_anon_WITH_ARIA_256_CBC_SHA384', False),
-    0xC048: ('TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC049: ('TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC04A: ('TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC04B: ('TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC04C: ('TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC04D: ('TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC04E: ('TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256', False),
-    0xC04F: ('TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384', False),
-    0xC050: ('TLS_RSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC051: ('TLS_RSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC052: ('TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC053: ('TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC054: ('TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC055: ('TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC056: ('TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256', False),
-    0xC057: ('TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384', False),
-    0xC058: ('TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256', False),
-    0xC059: ('TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384', False),
-    0xC05A: ('TLS_DH_anon_WITH_ARIA_128_GCM_SHA256', False),
-    0xC05B: ('TLS_DH_anon_WITH_ARIA_256_GCM_SHA384', False),
-    0xC05C: ('TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC05D: ('TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC05E: ('TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC05F: ('TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC060: ('TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC061: ('TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC062: ('TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256', False),
-    0xC063: ('TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384', False),
-    0xC064: ('TLS_PSK_WITH_ARIA_128_CBC_SHA256', False),
-    0xC065: ('TLS_PSK_WITH_ARIA_256_CBC_SHA384', False),
-    0xC066: ('TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256', False),
-    0xC067: ('TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384', False),
-    0xC068: ('TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256', False),
-    0xC069: ('TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384', False),
-    0xC06A: ('TLS_PSK_WITH_ARIA_128_GCM_SHA256', False),
-    0xC06B: ('TLS_PSK_WITH_ARIA_256_GCM_SHA384', False),
-    0xC06C: ('TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256', False),
-    0xC06D: ('TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384', False),
-    0xC06E: ('TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256', False),
-    0xC06F: ('TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384', False),
-    0xC070: ('TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256', False),
-    0xC071: ('TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384', False),
-    0xC072: ('TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC073: ('TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC074: ('TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC075: ('TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC076: ('TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC077: ('TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC078: ('TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC079: ('TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC07A: ('TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC07B: ('TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC07C: ('TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC07D: ('TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC07E: ('TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC07F: ('TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC080: ('TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC081: ('TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC082: ('TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC083: ('TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC084: ('TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC085: ('TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC086: ('TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC087: ('TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC088: ('TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC089: ('TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC08A: ('TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC08B: ('TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC08C: ('TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC08D: ('TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC08E: ('TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC08F: ('TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC090: ('TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC091: ('TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC092: ('TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256', False),
-    0xC093: ('TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384', False),
-    0xC094: ('TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC095: ('TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC096: ('TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC097: ('TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC098: ('TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC099: ('TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC09A: ('TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256', False),
-    0xC09B: ('TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384', False),
-    0xC09C: ('TLS_RSA_WITH_AES_128_CCM', False),
-    0xC09D: ('TLS_RSA_WITH_AES_256_CCM', False),
-    0xC09E: ('TLS_DHE_RSA_WITH_AES_128_CCM', True),
-    0xC09F: ('TLS_DHE_RSA_WITH_AES_256_CCM', True),
-    0xC0A0: ('TLS_RSA_WITH_AES_128_CCM_8', False),
-    0xC0A1: ('TLS_RSA_WITH_AES_256_CCM_8', False),
-    0xC0A2: ('TLS_DHE_RSA_WITH_AES_128_CCM_8', False),
-    0xC0A3: ('TLS_DHE_RSA_WITH_AES_256_CCM_8', False),
-    0xC0A4: ('TLS_PSK_WITH_AES_128_CCM', False),
-    0xC0A5: ('TLS_PSK_WITH_AES_256_CCM', False),
-    0xC0A6: ('TLS_DHE_PSK_WITH_AES_128_CCM', True),
-    0xC0A7: ('TLS_DHE_PSK_WITH_AES_256_CCM', True),
-    0xC0A8: ('TLS_PSK_WITH_AES_128_CCM_8', False),
-    0xC0A9: ('TLS_PSK_WITH_AES_256_CCM_8', False),
-    0xC0AA: ('TLS_PSK_DHE_WITH_AES_128_CCM_8', False),
-    0xC0AB: ('TLS_PSK_DHE_WITH_AES_256_CCM_8', False),
-    0xC0AC: ('TLS_ECDHE_ECDSA_WITH_AES_128_CCM', False),
-    0xC0AD: ('TLS_ECDHE_ECDSA_WITH_AES_256_CCM', False),
-    0xC0AE: ('TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8', False),
-    0xC0AF: ('TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8', False),
-    0xC0B0: ('TLS_ECCPWD_WITH_AES_128_GCM_SHA256', False),
-    0xC0B1: ('TLS_ECCPWD_WITH_AES_256_GCM_SHA384', False),
-    0xC0B2: ('TLS_ECCPWD_WITH_AES_128_CCM_SHA256', False),
-    0xC0B3: ('TLS_ECCPWD_WITH_AES_256_CCM_SHA384', False),
-    0xC0B4: ('TLS_SHA256_SHA256', False),
-    0xC0B5: ('TLS_SHA384_SHA384', False),
-    0xC100: ('TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC', False),
-    0xC101: ('TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC', False),
-    0xC102: ('TLS_GOSTR341112_256_WITH_28147_CNT_IMIT', False),
-    0xC103: ('TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L', False),
-    0xC104: ('TLS_GOSTR341112_256_WITH_MAGMA_MGM_L', False),
-    0xC105: ('TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S', False),
-    0xC106: ('TLS_GOSTR341112_256_WITH_MAGMA_MGM_S', False),
-    0xCCA8: ('TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256', True),
-    0xCCA9: ('TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256', True),
-    0xCCAA: ('TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256', True),
-    0xCCAB: ('TLS_PSK_WITH_CHACHA20_POLY1305_SHA256', False),
-    0xCCAC: ('TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256', True),
-    0xCCAD: ('TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256', True),
-    0xCCAE: ('TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256', False),
-    0xD001: ('TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256', True),
-    0xD002: ('TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384', True),
-    0xD003: ('TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256', False),
-    0xD005: ('TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256', True)
+    "0x0000": {
+        "cipher": "TLS_NULL_WITH_NULL_NULL",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0001": {
+        "cipher": "TLS_RSA_WITH_NULL_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0002": {
+        "cipher": "TLS_RSA_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0003": {
+        "cipher": "TLS_RSA_EXPORT_WITH_RC4_40_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0004": {
+        "cipher": "TLS_RSA_WITH_RC4_128_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0005": {
+        "cipher": "TLS_RSA_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0006": {
+        "cipher": "TLS_RSA_EXPORT_WITH_RC2_CBC_40_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0007": {
+        "cipher": "TLS_RSA_WITH_IDEA_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0008": {
+        "cipher": "TLS_RSA_EXPORT_WITH_DES40_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0009": {
+        "cipher": "TLS_RSA_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x000a": {
+        "cipher": "TLS_RSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x000b": {
+        "cipher": "TLS_DH_DSS_EXPORT_WITH_DES40_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x000c": {
+        "cipher": "TLS_DH_DSS_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x000d": {
+        "cipher": "TLS_DH_DSS_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x000e": {
+        "cipher": "TLS_DH_RSA_EXPORT_WITH_DES40_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x000f": {
+        "cipher": "TLS_DH_RSA_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0010": {
+        "cipher": "TLS_DH_RSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0011": {
+        "cipher": "TLS_DHE_DSS_EXPORT_WITH_DES40_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0012": {
+        "cipher": "TLS_DHE_DSS_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0013": {
+        "cipher": "TLS_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0014": {
+        "cipher": "TLS_DHE_RSA_EXPORT_WITH_DES40_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0015": {
+        "cipher": "TLS_DHE_RSA_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0016": {
+        "cipher": "TLS_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0017": {
+        "cipher": "TLS_DH_anon_EXPORT_WITH_RC4_40_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0018": {
+        "cipher": "TLS_DH_anon_WITH_RC4_128_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0019": {
+        "cipher": "TLS_DH_anon_EXPORT_WITH_DES40_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x001a": {
+        "cipher": "TLS_DH_anon_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x001b": {
+        "cipher": "TLS_DH_anon_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x001e": {
+        "cipher": "TLS_KRB5_WITH_DES_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x001f": {
+        "cipher": "TLS_KRB5_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0020": {
+        "cipher": "TLS_KRB5_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0021": {
+        "cipher": "TLS_KRB5_WITH_IDEA_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0022": {
+        "cipher": "TLS_KRB5_WITH_DES_CBC_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0023": {
+        "cipher": "TLS_KRB5_WITH_3DES_EDE_CBC_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0024": {
+        "cipher": "TLS_KRB5_WITH_RC4_128_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0025": {
+        "cipher": "TLS_KRB5_WITH_IDEA_CBC_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0026": {
+        "cipher": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0027": {
+        "cipher": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0028": {
+        "cipher": "TLS_KRB5_EXPORT_WITH_RC4_40_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0029": {
+        "cipher": "TLS_KRB5_EXPORT_WITH_DES_CBC_40_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x002a": {
+        "cipher": "TLS_KRB5_EXPORT_WITH_RC2_CBC_40_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x002b": {
+        "cipher": "TLS_KRB5_EXPORT_WITH_RC4_40_MD5",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x002c": {
+        "cipher": "TLS_PSK_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x002d": {
+        "cipher": "TLS_DHE_PSK_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x002e": {
+        "cipher": "TLS_RSA_PSK_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x002f": {
+        "cipher": "TLS_RSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0030": {
+        "cipher": "TLS_DH_DSS_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0031": {
+        "cipher": "TLS_DH_RSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0032": {
+        "cipher": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0033": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0034": {
+        "cipher": "TLS_DH_anon_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0035": {
+        "cipher": "TLS_RSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0036": {
+        "cipher": "TLS_DH_DSS_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0037": {
+        "cipher": "TLS_DH_RSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0038": {
+        "cipher": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0039": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x003a": {
+        "cipher": "TLS_DH_anon_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x003b": {
+        "cipher": "TLS_RSA_WITH_NULL_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x003c": {
+        "cipher": "TLS_RSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x003d": {
+        "cipher": "TLS_RSA_WITH_AES_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x003e": {
+        "cipher": "TLS_DH_DSS_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x003f": {
+        "cipher": "TLS_DH_RSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x0040": {
+        "cipher": "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x0041": {
+        "cipher": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0042": {
+        "cipher": "TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0043": {
+        "cipher": "TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0044": {
+        "cipher": "TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0045": {
+        "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0046": {
+        "cipher": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0067": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x0068": {
+        "cipher": "TLS_DH_DSS_WITH_AES_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x0069": {
+        "cipher": "TLS_DH_RSA_WITH_AES_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x006a": {
+        "cipher": "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x006b": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x006c": {
+        "cipher": "TLS_DH_anon_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x006d": {
+        "cipher": "TLS_DH_anon_WITH_AES_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0084": {
+        "cipher": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0085": {
+        "cipher": "TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0086": {
+        "cipher": "TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0087": {
+        "cipher": "TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0088": {
+        "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0089": {
+        "cipher": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x008a": {
+        "cipher": "TLS_PSK_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x008b": {
+        "cipher": "TLS_PSK_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x008c": {
+        "cipher": "TLS_PSK_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x008d": {
+        "cipher": "TLS_PSK_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x008e": {
+        "cipher": "TLS_DHE_PSK_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x008f": {
+        "cipher": "TLS_DHE_PSK_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0090": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0091": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0092": {
+        "cipher": "TLS_RSA_PSK_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0093": {
+        "cipher": "TLS_RSA_PSK_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0094": {
+        "cipher": "TLS_RSA_PSK_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0095": {
+        "cipher": "TLS_RSA_PSK_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0096": {
+        "cipher": "TLS_RSA_WITH_SEED_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0097": {
+        "cipher": "TLS_DH_DSS_WITH_SEED_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0098": {
+        "cipher": "TLS_DH_RSA_WITH_SEED_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x0099": {
+        "cipher": "TLS_DHE_DSS_WITH_SEED_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x009a": {
+        "cipher": "TLS_DHE_RSA_WITH_SEED_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x009b": {
+        "cipher": "TLS_DH_anon_WITH_SEED_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x009c": {
+        "cipher": "TLS_RSA_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x009d": {
+        "cipher": "TLS_RSA_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x009e": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x009f": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00a0": {
+        "cipher": "TLS_DH_RSA_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00a1": {
+        "cipher": "TLS_DH_RSA_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00a2": {
+        "cipher": "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00a3": {
+        "cipher": "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00a4": {
+        "cipher": "TLS_DH_DSS_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00a5": {
+        "cipher": "TLS_DH_DSS_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00a6": {
+        "cipher": "TLS_DH_anon_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00a7": {
+        "cipher": "TLS_DH_anon_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00a8": {
+        "cipher": "TLS_PSK_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00a9": {
+        "cipher": "TLS_PSK_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00aa": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_128_GCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00ab": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_256_GCM_SHA384",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00ac": {
+        "cipher": "TLS_RSA_PSK_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00ad": {
+        "cipher": "TLS_RSA_PSK_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00ae": {
+        "cipher": "TLS_PSK_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00af": {
+        "cipher": "TLS_PSK_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00b0": {
+        "cipher": "TLS_PSK_WITH_NULL_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00b1": {
+        "cipher": "TLS_PSK_WITH_NULL_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00b2": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00b3": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0x00b4": {
+        "cipher": "TLS_DHE_PSK_WITH_NULL_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00b5": {
+        "cipher": "TLS_DHE_PSK_WITH_NULL_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00b6": {
+        "cipher": "TLS_RSA_PSK_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00b7": {
+        "cipher": "TLS_RSA_PSK_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0x00b8": {
+        "cipher": "TLS_RSA_PSK_WITH_NULL_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00b9": {
+        "cipher": "TLS_RSA_PSK_WITH_NULL_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00ba": {
+        "cipher": "TLS_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00bb": {
+        "cipher": "TLS_DH_DSS_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00bc": {
+        "cipher": "TLS_DH_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00bd": {
+        "cipher": "TLS_DHE_DSS_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00be": {
+        "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00bf": {
+        "cipher": "TLS_DH_anon_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c0": {
+        "cipher": "TLS_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c1": {
+        "cipher": "TLS_DH_DSS_WITH_CAMELLIA_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c2": {
+        "cipher": "TLS_DH_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c3": {
+        "cipher": "TLS_DHE_DSS_WITH_CAMELLIA_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c4": {
+        "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c5": {
+        "cipher": "TLS_DH_anon_WITH_CAMELLIA_256_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c6": {
+        "cipher": "TLS_SM4_GCM_SM3",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x00c7": {
+        "cipher": "TLS_SM4_CCM_SM3",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x1301": {
+        "cipher": "TLS_AES_128_GCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0x1302": {
+        "cipher": "TLS_AES_256_GCM_SHA384",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0x1303": {
+        "cipher": "TLS_CHACHA20_POLY1305_SHA256",
+        "IANA": True,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x1304": {
+        "cipher": "TLS_AES_128_CCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0x1305": {
+        "cipher": "TLS_AES_128_CCM_8_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x1306": {
+        "cipher": "TLS_AEGIS_256_SHA512",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0x1307": {
+        "cipher": "TLS_AEGIS_128L_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc001": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc002": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc003": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc004": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc005": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc006": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc007": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc008": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc009": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc00a": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc00b": {
+        "cipher": "TLS_ECDH_RSA_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc00c": {
+        "cipher": "TLS_ECDH_RSA_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc00d": {
+        "cipher": "TLS_ECDH_RSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc00e": {
+        "cipher": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc00f": {
+        "cipher": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc010": {
+        "cipher": "TLS_ECDHE_RSA_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc011": {
+        "cipher": "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc012": {
+        "cipher": "TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc013": {
+        "cipher": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc014": {
+        "cipher": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc015": {
+        "cipher": "TLS_ECDH_anon_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc016": {
+        "cipher": "TLS_ECDH_anon_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc017": {
+        "cipher": "TLS_ECDH_anon_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc018": {
+        "cipher": "TLS_ECDH_anon_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc019": {
+        "cipher": "TLS_ECDH_anon_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc01a": {
+        "cipher": "TLS_SRP_SHA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc01b": {
+        "cipher": "TLS_SRP_SHA_RSA_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc01c": {
+        "cipher": "TLS_SRP_SHA_DSS_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc01d": {
+        "cipher": "TLS_SRP_SHA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc01e": {
+        "cipher": "TLS_SRP_SHA_RSA_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc01f": {
+        "cipher": "TLS_SRP_SHA_DSS_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc020": {
+        "cipher": "TLS_SRP_SHA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc021": {
+        "cipher": "TLS_SRP_SHA_RSA_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc022": {
+        "cipher": "TLS_SRP_SHA_DSS_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc023": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc024": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc025": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc026": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc027": {
+        "cipher": "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc028": {
+        "cipher": "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc029": {
+        "cipher": "TLS_ECDH_RSA_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc02a": {
+        "cipher": "TLS_ECDH_RSA_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc02b": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc02c": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc02d": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc02e": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc02f": {
+        "cipher": "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc030": {
+        "cipher": "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc031": {
+        "cipher": "TLS_ECDH_RSA_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc032": {
+        "cipher": "TLS_ECDH_RSA_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2026
+    },
+    "0xc033": {
+        "cipher": "TLS_ECDHE_PSK_WITH_RC4_128_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc034": {
+        "cipher": "TLS_ECDHE_PSK_WITH_3DES_EDE_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc035": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc036": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc037": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc038": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc039": {
+        "cipher": "TLS_ECDHE_PSK_WITH_NULL_SHA",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc03a": {
+        "cipher": "TLS_ECDHE_PSK_WITH_NULL_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc03b": {
+        "cipher": "TLS_ECDHE_PSK_WITH_NULL_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc03c": {
+        "cipher": "TLS_RSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc03d": {
+        "cipher": "TLS_RSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc03e": {
+        "cipher": "TLS_DH_DSS_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc03f": {
+        "cipher": "TLS_DH_DSS_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc040": {
+        "cipher": "TLS_DH_RSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc041": {
+        "cipher": "TLS_DH_RSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc042": {
+        "cipher": "TLS_DHE_DSS_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc043": {
+        "cipher": "TLS_DHE_DSS_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc044": {
+        "cipher": "TLS_DHE_RSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc045": {
+        "cipher": "TLS_DHE_RSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc046": {
+        "cipher": "TLS_DH_anon_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc047": {
+        "cipher": "TLS_DH_anon_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc048": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc049": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc04a": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc04b": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc04c": {
+        "cipher": "TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc04d": {
+        "cipher": "TLS_ECDHE_RSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc04e": {
+        "cipher": "TLS_ECDH_RSA_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc04f": {
+        "cipher": "TLS_ECDH_RSA_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc050": {
+        "cipher": "TLS_RSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc051": {
+        "cipher": "TLS_RSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc052": {
+        "cipher": "TLS_DHE_RSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc053": {
+        "cipher": "TLS_DHE_RSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc054": {
+        "cipher": "TLS_DH_RSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc055": {
+        "cipher": "TLS_DH_RSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc056": {
+        "cipher": "TLS_DHE_DSS_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc057": {
+        "cipher": "TLS_DHE_DSS_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc058": {
+        "cipher": "TLS_DH_DSS_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc059": {
+        "cipher": "TLS_DH_DSS_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc05a": {
+        "cipher": "TLS_DH_anon_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc05b": {
+        "cipher": "TLS_DH_anon_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc05c": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc05d": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc05e": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc05f": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc060": {
+        "cipher": "TLS_ECDHE_RSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc061": {
+        "cipher": "TLS_ECDHE_RSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc062": {
+        "cipher": "TLS_ECDH_RSA_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc063": {
+        "cipher": "TLS_ECDH_RSA_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc064": {
+        "cipher": "TLS_PSK_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc065": {
+        "cipher": "TLS_PSK_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc066": {
+        "cipher": "TLS_DHE_PSK_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc067": {
+        "cipher": "TLS_DHE_PSK_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc068": {
+        "cipher": "TLS_RSA_PSK_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc069": {
+        "cipher": "TLS_RSA_PSK_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc06a": {
+        "cipher": "TLS_PSK_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc06b": {
+        "cipher": "TLS_PSK_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc06c": {
+        "cipher": "TLS_DHE_PSK_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc06d": {
+        "cipher": "TLS_DHE_PSK_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc06e": {
+        "cipher": "TLS_RSA_PSK_WITH_ARIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc06f": {
+        "cipher": "TLS_RSA_PSK_WITH_ARIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc070": {
+        "cipher": "TLS_ECDHE_PSK_WITH_ARIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc071": {
+        "cipher": "TLS_ECDHE_PSK_WITH_ARIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc072": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc073": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc074": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc075": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc076": {
+        "cipher": "TLS_ECDHE_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc077": {
+        "cipher": "TLS_ECDHE_RSA_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc078": {
+        "cipher": "TLS_ECDH_RSA_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc079": {
+        "cipher": "TLS_ECDH_RSA_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc07a": {
+        "cipher": "TLS_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc07b": {
+        "cipher": "TLS_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc07c": {
+        "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc07d": {
+        "cipher": "TLS_DHE_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc07e": {
+        "cipher": "TLS_DH_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc07f": {
+        "cipher": "TLS_DH_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc080": {
+        "cipher": "TLS_DHE_DSS_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc081": {
+        "cipher": "TLS_DHE_DSS_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc082": {
+        "cipher": "TLS_DH_DSS_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc083": {
+        "cipher": "TLS_DH_DSS_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc084": {
+        "cipher": "TLS_DH_anon_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc085": {
+        "cipher": "TLS_DH_anon_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc086": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc087": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc088": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc089": {
+        "cipher": "TLS_ECDH_ECDSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc08a": {
+        "cipher": "TLS_ECDHE_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc08b": {
+        "cipher": "TLS_ECDHE_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc08c": {
+        "cipher": "TLS_ECDH_RSA_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc08d": {
+        "cipher": "TLS_ECDH_RSA_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc08e": {
+        "cipher": "TLS_PSK_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc08f": {
+        "cipher": "TLS_PSK_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc090": {
+        "cipher": "TLS_DHE_PSK_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc091": {
+        "cipher": "TLS_DHE_PSK_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc092": {
+        "cipher": "TLS_RSA_PSK_WITH_CAMELLIA_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc093": {
+        "cipher": "TLS_RSA_PSK_WITH_CAMELLIA_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc094": {
+        "cipher": "TLS_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc095": {
+        "cipher": "TLS_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc096": {
+        "cipher": "TLS_DHE_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc097": {
+        "cipher": "TLS_DHE_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc098": {
+        "cipher": "TLS_RSA_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc099": {
+        "cipher": "TLS_RSA_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc09a": {
+        "cipher": "TLS_ECDHE_PSK_WITH_CAMELLIA_128_CBC_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc09b": {
+        "cipher": "TLS_ECDHE_PSK_WITH_CAMELLIA_256_CBC_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc09c": {
+        "cipher": "TLS_RSA_WITH_AES_128_CCM",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc09d": {
+        "cipher": "TLS_RSA_WITH_AES_256_CCM",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc09e": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_128_CCM",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0xc09f": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_256_CCM",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0xc0a0": {
+        "cipher": "TLS_RSA_WITH_AES_128_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a1": {
+        "cipher": "TLS_RSA_WITH_AES_256_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a2": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_128_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a3": {
+        "cipher": "TLS_DHE_RSA_WITH_AES_256_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a4": {
+        "cipher": "TLS_PSK_WITH_AES_128_CCM",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a5": {
+        "cipher": "TLS_PSK_WITH_AES_256_CCM",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a6": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_128_CCM",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0xc0a7": {
+        "cipher": "TLS_DHE_PSK_WITH_AES_256_CCM",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2029
+    },
+    "0xc0a8": {
+        "cipher": "TLS_PSK_WITH_AES_128_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0a9": {
+        "cipher": "TLS_PSK_WITH_AES_256_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0aa": {
+        "cipher": "TLS_PSK_DHE_WITH_AES_128_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0ab": {
+        "cipher": "TLS_PSK_DHE_WITH_AES_256_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0ac": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_128_CCM",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc0ad": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_CCM",
+        "IANA": False,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xc0ae": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0af": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_AES_256_CCM_8",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0b0": {
+        "cipher": "TLS_ECCPWD_WITH_AES_128_GCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0b1": {
+        "cipher": "TLS_ECCPWD_WITH_AES_256_GCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0b2": {
+        "cipher": "TLS_ECCPWD_WITH_AES_128_CCM_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0b3": {
+        "cipher": "TLS_ECCPWD_WITH_AES_256_CCM_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0b4": {
+        "cipher": "TLS_SHA256_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc0b5": {
+        "cipher": "TLS_SHA384_SHA384",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc100": {
+        "cipher": "TLS_GOSTR341112_256_WITH_KUZNYECHIK_CTR_OMAC",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc101": {
+        "cipher": "TLS_GOSTR341112_256_WITH_MAGMA_CTR_OMAC",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc102": {
+        "cipher": "TLS_GOSTR341112_256_WITH_28147_CNT_IMIT",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc103": {
+        "cipher": "TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_L",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc104": {
+        "cipher": "TLS_GOSTR341112_256_WITH_MAGMA_MGM_L",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc105": {
+        "cipher": "TLS_GOSTR341112_256_WITH_KUZNYECHIK_MGM_S",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xc106": {
+        "cipher": "TLS_GOSTR341112_256_WITH_MAGMA_MGM_S",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xcca8": {
+        "cipher": "TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": True,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xcca9": {
+        "cipher": "TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": True,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xccaa": {
+        "cipher": "TLS_DHE_RSA_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": True,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xccab": {
+        "cipher": "TLS_PSK_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xccac": {
+        "cipher": "TLS_ECDHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": True,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xccad": {
+        "cipher": "TLS_DHE_PSK_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": True,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xccae": {
+        "cipher": "TLS_RSA_PSK_WITH_CHACHA20_POLY1305_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xd001": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_128_GCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xd002": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_256_GCM_SHA384",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    },
+    "0xd003": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_128_CCM_8_SHA256",
+        "IANA": False,
+        "BSI": False,
+        "BSI_ValidUpto": None
+    },
+    "0xd005": {
+        "cipher": "TLS_ECDHE_PSK_WITH_AES_128_CCM_SHA256",
+        "IANA": True,
+        "BSI": True,
+        "BSI_ValidUpto": 2031
+    }
 }
