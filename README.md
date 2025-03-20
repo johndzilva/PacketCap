@@ -58,7 +58,7 @@ To get started with JDZ Tools, follow the steps below to install the required de
 1. Install Python dependencies:
 
 ```bash
-pip install scapy pyshark rich netifaces
+pip install scapy pyshark rich netifaces pandas xlsxwriter mitmproxy
 ```
 
 2. Install TShark:

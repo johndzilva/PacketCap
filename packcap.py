@@ -134,44 +134,46 @@ def manage_project():
     console.print("[bold yellow]0. Create New Project[/bold yellow]")
     console.print("[bold yellow]Q. Go Back to Main Menu[/bold yellow]")
     
-    choice = console.input("\n[bold yellow]Select project number, 0 to create new, or Q to go back: [/bold yellow]").strip().lower()
-    
-    # Handle user's choice
-    if choice == 'q':
-        return
-    
-    # Create New Project
-    if choice == '0':
-        new_project_name = console.input("[bold yellow]Enter new project name: [/bold yellow]").strip()
-        new_project_path = os.path.join(projects_dir, new_project_name)
+    while True:
+        choice = console.input("\n[bold yellow]Select project number, 0 to create new, or Q to go back: [/bold yellow]").strip().lower()
         
-        if not new_project_name:
-            console.print("[red]Project name cannot be empty. Returning to Project Management...[/red]")
+        # Handle user's choice
+        if choice == 'q':
             return
         
-        if os.path.exists(new_project_path):
-            console.print("[red]A project with this name already exists. Choose a different name.[/red]")
+        # Create New Project
+        if choice == '0':
+            new_project_name = console.input("[bold yellow]Enter new project name: [/bold yellow]").strip()
+            new_project_path = os.path.join(projects_dir, new_project_name)
+            
+            if not new_project_name:
+                console.print("[red]Project name cannot be empty. Please try again.[/red]")
+                continue
+            
+            if os.path.exists(new_project_path):
+                console.print("[red]A project with this name already exists. Choose a different name.[/red]")
+                continue
+            
+            try:
+                os.makedirs(new_project_path)
+                console.print(f"[green]New project '{new_project_name}' created successfully![/green]")
+                defaults['project_path'] = new_project_path
+            except Exception as e:
+                console.print(f"[red]Failed to create project folder. Error: {str(e)}[/red]")
             return
         
+        # Select Existing Project
         try:
-            os.makedirs(new_project_path)
-            console.print(f"[green]New project '{new_project_name}' created successfully![/green]")
-            defaults['project_path'] = new_project_path
-        except Exception as e:
-            console.print(f"[red]Failed to create project folder. Error: {str(e)}[/red]")
-        return
-
-    # Select Existing Project
-    try:
-        idx = int(choice)
-        if 1 <= idx <= len(existing_projects):
-            selected_project = existing_projects[idx - 1]
-            defaults['project_path'] = os.path.join(projects_dir, selected_project)
-            console.print(f"[green]Selected Project:[/green] {selected_project}")
-        else:
-            console.print("[red]Invalid selection. Returning to Project Management...[/red]")
-    except ValueError:
-        console.print("[red]Invalid input. Returning to Project Management...[/red]")
+            idx = int(choice)
+            if 1 <= idx <= len(existing_projects):
+                selected_project = existing_projects[idx - 1]
+                defaults['project_path'] = os.path.join(projects_dir, selected_project)
+                console.print(f"[green]Selected Project:[/green] {selected_project}")
+                break
+            else:
+                console.print(f"[red]Invalid selection. Please enter a number between 0 and {len(existing_projects)}.[/red]")
+        except ValueError:
+            console.print("[red]Invalid input. Please enter a valid number, 0 to create new, or Q to go back.[/red]")
 
     # Set project_path as the default for the entire script
     os.chdir(defaults['project_path'])
@@ -432,8 +434,8 @@ def capture_packets():
     console.input("[bold yellow]Press Enter to return to the main menu...[/bold yellow]")
  
 def resolve_cipher(cipher):
-    """Resolve a cipher suite code to its human‑readable name and recommended flag.
-       Returns a tuple: (name, recommended)"""
+    """Resolve a cipher suite code to its human-readable name and recommendations.
+       Returns a tuple: (name, iana_rec, bsi_rec)"""
     try:
         if isinstance(cipher, int):
             code = cipher
@@ -445,11 +447,14 @@ def resolve_cipher(cipher):
         else:
             code = int(cipher)
     except Exception:
-        return (str(cipher), False)
-    if code in CIPHER_SUITES:
-        return CIPHER_SUITES[code]
+        return (str(cipher), False, False)
+    
+    hex_code = f"0x{code:04x}"
+    if hex_code in CIPHER_SUITES:
+        cipher_info = CIPHER_SUITES[hex_code]
+        return (cipher_info["cipher"], cipher_info["IANA"], cipher_info["BSI"])
     else:
-        return (f"0x{code:04x}", False)
+        return (hex_code, False, False)
 
 def build_dns_map(packets):
     """Build a mapping from IP to domain names based on DNS answer records."""
@@ -487,81 +492,154 @@ def resolve_ip_with_hostname(ip, dns_map=None):
     except Exception:
         return ip
 
-def export_tls_sessions_to_csv(sessions, dns_map, specific_session=None):
-    """Export TLS sessions data to a CSV file."""
+def export_tls_sessions_to_excel(sessions, dns_map, specific_session=None):
+    """Export TLS sessions data to an Excel file with formatting."""
+    try:
+        import pandas as pd
+        import xlsxwriter
+    except ImportError:
+        console.print("[red]Missing required packages. Installing them now...[/red]")
+        try:
+            subprocess.run(['pip3', 'install', 'pandas', 'xlsxwriter'], check=True)
+            console.print("[green]Successfully installed required packages![/green]")
+            import pandas as pd
+            import xlsxwriter
+        except Exception as install_error:
+            console.print("[red]Failed to install packages. Falling back to CSV export...[/red]")
+            export_tls_sessions_to_csv(sessions, dns_map, specific_session)
+            return
+
     timestamp = datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')
     
     # File naming convention
     if specific_session:
         client_ip, server_ip = specific_session
-        filename = f"tls_session_{client_ip}_{server_ip}_{timestamp}.csv"
+        filename = f"tls_session_{client_ip}_{server_ip}_{timestamp}.xlsx"
     else:
-        filename = f"tls_sessions_{timestamp}.csv"
+        filename = f"tls_sessions_{timestamp}.xlsx"
     
     # Save file to the current project directory
     file_path = os.path.join(defaults['project_path'], filename) if defaults['project_path'] else filename
     
-    # CSV Header
-    headers = ["Client Address", "Server Address", "Offered Cipher Suite", 
-               "Offered Best Practice", "Selected Cipher Suite", "Selected Best Practice"]
+    # Create Excel writer object with xlsxwriter engine
+    writer = pd.ExcelWriter(file_path, engine='xlsxwriter')
+    workbook = writer.book
+
+    # Create formats
+    header_format = workbook.add_format({
+        'bold': True,
+        'bg_color': '#4F81BD',
+        'font_color': 'white',
+        'border': 1,
+        'text_wrap': True,
+        'valign': 'vcenter',
+        'align': 'center'
+    })
     
-    with open(file_path, mode='w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(headers)
+    # Create separate formats for different cell types
+    cell_format = workbook.add_format({
+        'text_wrap': True,
+        'valign': 'vcenter',
+        'border': 1,
+        'font_color': 'black'  # Default black color for regular cells
+    })
+
+    recommended_format = workbook.add_format({
+        'text_wrap': True,
+        'valign': 'vcenter',
+        'border': 1,
+        'font_color': 'green'  # Green color for recommended
+    })
+
+    not_recommended_format = workbook.add_format({
+        'text_wrap': True,
+        'valign': 'vcenter',
+        'border': 1,
+        'font_color': 'red'  # Red color for not recommended
+    })
+
+    # Prepare data for DataFrame
+    data = []
+    current_session = None
+    
+    for session in sessions:
+        if specific_session and (session["client"], session["server"]) != specific_session:
+            continue
         
-        # Export either all sessions or a specific one
-        for session in sessions:
-            if specific_session and (session["client"], session["server"]) != specific_session:
-                continue
+        # Resolve IP with Domain Name
+        client_addr = resolve_ip_with_hostname(session['client'], dns_map)
+        server_addr = resolve_ip_with_hostname(session['server'], dns_map)
+        selected_name, selected_iana, selected_bsi = session["selected"]
+        
+        # Process each offered cipher suite
+        if session['offered']:
+            first_row = True
+            for name, iana_rec, bsi_rec in session['offered']:
+                row_data = {
+                    'Client Address': client_addr if first_row else "",
+                    'Server Address': server_addr if first_row else "",
+                    'SNI': session['sni'] if first_row else "",
+                    'Offered Cipher Suite': name,
+                    'Selected': "✓" if name == selected_name else "",
+                    'IANA Recommended': "Recommended" if iana_rec else "Not Recommended",
+                    'BSI Recommended': "Recommended" if bsi_rec else "Not Recommended"
+                }
+                data.append(row_data)
+                first_row = False
+        else:
+            data.append({
+                'Client Address': client_addr,
+                'Server Address': server_addr,
+                'SNI': session['sni'],
+                'Offered Cipher Suite': "N/A",
+                'Selected': "N/A",
+                'IANA Recommended': "N/A",
+                'BSI Recommended': "N/A"
+            })
+
+    # Create DataFrame and write to Excel
+    df = pd.DataFrame(data)
+    df.to_excel(writer, sheet_name='TLS Sessions', index=False)
+    
+    # Get the worksheet object
+    worksheet = writer.sheets['TLS Sessions']
+    
+    # Set column widths
+    worksheet.set_column('A:A', 30)  # Client Address
+    worksheet.set_column('B:B', 30)  # Server Address
+    worksheet.set_column('C:C', 20)  # SNI
+    worksheet.set_column('D:D', 50)  # Offered Cipher Suite
+    worksheet.set_column('E:E', 10)  # Selected
+    worksheet.set_column('F:F', 20)  # IANA Recommended
+    worksheet.set_column('G:G', 20)  # BSI Recommended
+    
+    # Write headers with format
+    for col_num, value in enumerate(df.columns.values):
+        worksheet.write(0, col_num, value, header_format)
+    
+    # Apply formats to all data cells
+    for row_num in range(len(df)):
+        for col_num in range(len(df.columns)):
+            cell_value = df.iloc[row_num, col_num]
             
-            # Resolve IP with Domain Name
-            client_addr = resolve_ip_with_hostname(session['client'], dns_map)
-            server_addr = resolve_ip_with_hostname(session['server'], dns_map)
-            
-            # Selected Cipher Details (Once per Session)
-            selected_name, selected_rec = session["selected"]
-            selected_cipher = f"{selected_name}"
-            selected_best_practice = "Yes" if selected_rec else "No"
-            
-            # Format Offered Ciphers - Each Cipher Suite on a New Row
-            if session['offered']:
-                # Flag to display Client and Server Address only once per session
-                first_row = True
-                for name, rec in session['offered']:
-                    offered_cipher = name
-                    offered_best_practice = "Yes" if rec else "No"
-                    
-                    # Display Client/Server Address and Selected Cipher only once per session
-                    if first_row:
-                        writer.writerow([
-                            client_addr, 
-                            server_addr, 
-                            offered_cipher, 
-                            offered_best_practice, 
-                            selected_cipher, 
-                            selected_best_practice
-                        ])
-                        first_row = False
-                    else:
-                        # Leave Client/Server Address and Selected Cipher empty for subsequent rows
-                        writer.writerow([
-                            "", 
-                            "", 
-                            offered_cipher, 
-                            offered_best_practice, 
-                            "", 
-                            ""
-                        ])
+            # Choose format based on column and value
+            if col_num in [5, 6]:  # IANA and BSI columns
+                if cell_value == "Recommended":
+                    format_to_use = recommended_format
+                elif cell_value == "Not Recommended":
+                    format_to_use = not_recommended_format
+                else:
+                    format_to_use = cell_format
             else:
-                # If no offered ciphers, still write the session details once
-                writer.writerow([
-                    client_addr, 
-                    server_addr, 
-                    "N/A", 
-                    "N/A", 
-                    selected_cipher, 
-                    selected_best_practice
-                ])
+                format_to_use = cell_format
+            
+            worksheet.write(row_num + 1, col_num, cell_value, format_to_use)
+    
+    # Add autofilter
+    worksheet.autofilter(0, 0, len(df), len(df.columns) - 1)
+    
+    # Save the workbook
+    writer.close()
     
     console.print(f"[green]TLS session data exported successfully to {file_path}[/green]")
 
@@ -701,65 +779,100 @@ def advanced_packet_analysis(packets):
         console.print(Panel.fit("[bold cyan]TLS Analysis[/bold cyan]", box=box.DOUBLE))
         client_sessions = {}
         server_sessions = {}
+          
+        console.print("[cyan]Scanning for TLS sessions...[/cyan]")
         
         # Process TLS Client Hello packets
         for pkt in packets:
-            if pkt.haslayer(TLSClientHello):
-                client_ip = pkt["IP"].src if pkt.haslayer("IP") else "N/A"
-                server_ip = pkt["IP"].dst if pkt.haslayer("IP") else "N/A"
-                key = (client_ip, server_ip)
-                tls_client = pkt[TLSClientHello]
-                sni = None
-                if hasattr(tls_client, 'extensions'):
-                    for ext in tls_client.extensions:
-                        if ext.type == 0 and ext.servernames:
-                            sni = ext.servernames[0].data
-                            if isinstance(sni, bytes):
-                                sni = sni.decode()
-                offered = []
-                if hasattr(tls_client, 'cipher_suites') and tls_client.cipher_suites:
-                    offered = tls_client.cipher_suites
-                elif hasattr(tls_client, 'ciphers') and tls_client.ciphers:
-                    offered = tls_client.ciphers
-                offered_resolved = [resolve_cipher(cs) for cs in offered]
-                client_sessions[key] = {
-                    "client": client_ip,
-                    "server": server_ip,
-                    "sni": sni if sni else "N/A",
-                    "offered": offered_resolved
-                }
+            try:
+                if TLS in pkt and TLSClientHello in pkt:
+ 
+                    client_ip = pkt["IP"].src if pkt.haslayer("IP") else "N/A"
+                    server_ip = pkt["IP"].dst if pkt.haslayer("IP") else "N/A"
+                    key = (client_ip, server_ip)
+                    tls_client = pkt[TLSClientHello]
+                    
+                    sni = None
+                    if hasattr(tls_client, 'extensions'):
+                        for ext in tls_client.extensions:
+                            if ext.type == 0 and ext.servernames:
+                                sni = ext.servernames[0].data
+                                if isinstance(sni, bytes):
+                                    sni = sni.decode()
+                                console.print(f"[blue]SNI found: {sni}[/blue]")
+                    
+                    offered = []
+                    if hasattr(tls_client, 'cipher_suites') and tls_client.cipher_suites:
+                        offered = tls_client.cipher_suites
+                    elif hasattr(tls_client, 'ciphers') and tls_client.ciphers:
+                        offered = tls_client.ciphers
+                    
+                    # Resolve each cipher suite with both IANA and BSI recommendations
+                    offered_resolved = []
+                    for cs in offered:
+                        name, iana_rec, bsi_rec = resolve_cipher(cs)
+                        offered_resolved.append((name, iana_rec, bsi_rec))
+                    
+                    client_sessions[key] = {
+                        "client": client_ip,
+                        "server": server_ip,
+                        "sni": sni if sni else "N/A",
+                        "offered": offered_resolved
+                    }
+            except Exception as e:
+                console.print(f"[yellow]Error processing Client Hello: {str(e)}[/yellow]")
+                continue
         
         # Process TLS Server Hello packets
         for pkt in packets:
-            if pkt.haslayer(TLSServerHello):
-                server_ip = pkt["IP"].src if pkt.haslayer("IP") else "N/A"
-                client_ip = pkt["IP"].dst if pkt.haslayer("IP") else "N/A"
-                key = (client_ip, server_ip)
-                tls_server = pkt[TLSServerHello]
-                server_cipher = None
-                if hasattr(tls_server, "fields"):
-                    server_cipher = tls_server.fields.get("cipher_suite", None)
-                if server_cipher is None:
-                    server_cipher = getattr(tls_server, 'ciphers', None)
-                if server_cipher is None:
-                    server_cipher = getattr(tls_server, 'cipher', None)
-                if isinstance(server_cipher, list) and len(server_cipher) > 0:
-                    server_cipher = server_cipher[0]
-                resolved_server = resolve_cipher(server_cipher) if server_cipher is not None else ("N/A", False)
-                server_sessions[key] = {
-                    "selected": resolved_server,
-                    "client": client_ip,
-                    "server": server_ip
-                }
+            try:
+                if TLS in pkt and TLSServerHello in pkt:
+                    server_ip = pkt["IP"].src if pkt.haslayer("IP") else "N/A"
+                    client_ip = pkt["IP"].dst if pkt.haslayer("IP") else "N/A"
+                    key = (client_ip, server_ip)
+                    tls_server = pkt[TLSServerHello]
         
+                    server_cipher = None
+                    if hasattr(tls_server, "fields"):
+                        server_cipher = tls_server.fields.get("cipher_suite", None)
+                        if server_cipher:
+                            console.print(f"[blue]Found cipher suite in fields: {server_cipher}[/blue]")
+                    if server_cipher is None:
+                        server_cipher = getattr(tls_server, 'ciphers', None)
+                        if server_cipher:
+                            console.print(f"[blue]Found cipher suite in ciphers: {server_cipher}[/blue]")
+                    if server_cipher is None:
+                        server_cipher = getattr(tls_server, 'cipher', None)
+                        if server_cipher:
+                            console.print(f"[blue]Found cipher suite in cipher: {server_cipher}[/blue]")
+                    
+                    if isinstance(server_cipher, list) and len(server_cipher) > 0:
+                        server_cipher = server_cipher[0]
+                        console.print(f"[blue]Using first cipher from list: {server_cipher}[/blue]")
+                    
+                    # Resolve server cipher with both IANA and BSI recommendations
+                    name, iana_rec, bsi_rec = resolve_cipher(server_cipher) if server_cipher is not None else ("N/A", False, False)
+                    console.print(f"[blue]Selected cipher: {name} (IANA: {iana_rec}, BSI: {bsi_rec})[/blue]")
+                    
+                    server_sessions[key] = {
+                        "selected": (name, iana_rec, bsi_rec),
+                        "client": client_ip,
+                        "server": server_ip
+                    }
+            except Exception as e:
+                console.print(f"[yellow]Error processing Server Hello: {str(e)}[/yellow]")
+                continue
+         
         # Merge TLS sessions by (client, server) pair
         sessions = []
         for key, client_info in client_sessions.items():
             session = client_info.copy()
             if key in server_sessions:
                 session["selected"] = server_sessions[key]["selected"]
+                console.print(f"[blue]Matched session for {key[0]} -> {key[1]}[/blue]")
             else:
-                session["selected"] = ("N/A", False)
+                session["selected"] = ("N/A", False, False)
+                console.print(f"[yellow]No server response found for {key[0]} -> {key[1]}[/yellow]")
             sessions.append(session)
         
         if sessions:
@@ -767,22 +880,64 @@ def advanced_packet_analysis(packets):
             tls_table.add_column("Client IP", style="bold cyan")
             tls_table.add_column("Server IP", style="bold cyan")
             tls_table.add_column("SNI", style="magenta")
-            tls_table.add_column("Offered Ciphers", style="green")
-            tls_table.add_column("Selected Cipher", style="bold")
+            tls_table.add_column("Offered Cipher Suite", style="green")
+            tls_table.add_column("Selected", style="bold")
+            tls_table.add_column("IANA", style="yellow")
+            tls_table.add_column("BSI", style="yellow")
+
             for sess in sessions:
                 client_disp = resolve_ip_with_hostname(sess['client'], dns_map)
                 server_disp = resolve_ip_with_hostname(sess['server'], dns_map)
-                offered = ", ".join(
-                    f"[green]{name}[/green]" if rec else f"[red]{name}[/red]"
-                    for name, rec in sess['offered']
-                ) if sess['offered'] else "N/A"
-                selected_name, selected_rec = sess["selected"]
-                selected_disp = f"[green]{selected_name}[/green]" if selected_rec else f"[red]{selected_name}[/red]"
-                tls_table.add_row(client_disp, server_disp, sess['sni'], offered, selected_disp)
+                selected_name, selected_iana, selected_bsi = sess["selected"]
+                
+                # If there are offered cipher suites, create a row for each one
+                if sess['offered']:
+                    first_row = True
+                    for name, iana_rec, bsi_rec in sess['offered']:
+                        # For first row, include client, server, and SNI
+                        if first_row:
+                            tls_table.add_row(
+                                client_disp,
+                                server_disp,
+                                sess['sni'],
+                                name,
+                                "✓" if name == selected_name else "",
+                                "[green]Recommended[/green]" if iana_rec else "[red]Not Recommended[/red]",
+                                "[green]Recommended[/green]" if bsi_rec else "[red]Not Recommended[/red]"
+                            )
+                            first_row = False
+                        else:
+                            # For subsequent rows, use empty strings for client, server, and SNI
+                            tls_table.add_row(
+                                "",
+                                "",
+                                "",
+                                name,
+                                "✓" if name == selected_name else "",
+                                "[green]Recommended[/green]" if iana_rec else "[red]Not Recommended[/red]",
+                                "[green]Recommended[/green]" if bsi_rec else "[red]Not Recommended[/red]"
+                            )
+                else:
+                    # If no offered cipher suites, show N/A
+                    tls_table.add_row(
+                        client_disp,
+                        server_disp,
+                        sess['sni'],
+                        "N/A",
+                        "N/A",
+                        "N/A",
+                        "N/A"
+                    )
+            
             console.print(tls_table)
 
             # Option to Export TLS Data
-            export_choice = console.input("[bold yellow]\nDo you want to export TLS session data? (y/N): [/bold yellow]").strip().lower()
+            while True:
+                export_choice = console.input("[bold yellow]\nDo you want to export TLS session data? (y/N): [/bold yellow]").strip().lower()
+                if export_choice in ['y', 'n', '']:
+                    break
+                console.print("[red]Invalid input. Please enter 'y' for yes or 'n' (or press Enter) for no.[/red]")
+            
             if export_choice == 'y':
                 console.print("[bold cyan]\nSelect Session to Export:[/bold cyan]")
                 console.print("[green]0. Export All Sessions[/green]")
@@ -790,14 +945,23 @@ def advanced_packet_analysis(packets):
                     client_disp = resolve_ip_with_hostname(sess['client'], dns_map)
                     server_disp = resolve_ip_with_hostname(sess['server'], dns_map)
                     console.print(f"[green]{idx}.[/green] Client: {client_disp}, Server: {server_disp}")
-                session_choice = console.input("[bold yellow]Select session number (or 0 for all): [/bold yellow]").strip()
                 
-                if session_choice == '0':
-                    export_tls_sessions_to_csv(sessions, dns_map)
-                else:
-                    idx = int(session_choice) - 1
-                    specific_session = (sessions[idx]['client'], sessions[idx]['server'])
-                    export_tls_sessions_to_csv(sessions, dns_map, specific_session)
+                while True:
+                    session_choice = console.input("[bold yellow]Select session number (or 0 for all): [/bold yellow]").strip()
+                    
+                    if session_choice == '0':
+                        export_tls_sessions_to_excel(sessions, dns_map)
+                        break
+                    try:
+                        idx = int(session_choice)
+                        if 1 <= idx <= len(sessions):
+                            specific_session = (sessions[idx - 1]['client'], sessions[idx - 1]['server'])
+                            export_tls_sessions_to_excel(sessions, dns_map, specific_session)
+                            break
+                        else:
+                            console.print(f"[red]Invalid selection. Please enter a number between 0 and {len(sessions)}.[/red]")
+                    except ValueError:
+                        console.print("[red]Invalid input. Please enter a valid number.[/red]")
         else:
             console.print("[red]No TLS sessions found.[/red]")
     else:
@@ -1653,6 +1817,17 @@ def execute_remote_find():
     clear_screen()
     console.print(Panel.fit("[bold cyan]Remote Terminal Find Operation[/bold cyan]", box=box.DOUBLE))
 
+    # Check if running in tmux
+    try:
+        subprocess.run(['tmux', 'display-message'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError:
+        console.print("[red]Error: This function requires running inside a tmux session.[/red]")
+        console.print("[yellow]Please start tmux first and then run this program again.[/yellow]")
+        console.print("\n[cyan]You can start tmux by running:[/cyan]")
+        console.print("    tmux")
+        console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
+        return
+
     # Check if project path is set
     if not defaults['project_path']:
         console.print("[red]Please select a project first![/red]")
@@ -2055,6 +2230,301 @@ def execute_remote_find():
 
     console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
 
+
+def perform_mitm_analysis():
+    """Perform MITM analysis using mitmproxy features"""
+    clear_screen()
+    console.print(Panel.fit("[bold red]MITM Analysis with mitmproxy[/bold red]", box=box.DOUBLE))
+
+    # Check if running in tmux
+    try:
+        subprocess.run(['tmux', 'display-message'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except subprocess.CalledProcessError:
+        console.print("[red]Error: This function requires running inside a tmux session.[/red]")
+        console.print("[yellow]Please start tmux first and then run this program again.[/yellow]")
+        console.print("\n[cyan]You can start tmux by running:[/cyan]")
+        console.print("    tmux")
+        console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
+        return
+
+    # Check if mitmproxy is installed
+    try:
+        subprocess.run(['mitmproxy', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+    except FileNotFoundError:
+        console.print("[red]Error: mitmproxy is not installed.[/red]")
+        console.print("[yellow]Please install mitmproxy first:[/yellow]")
+        console.print("    pip install mitmproxy")
+        console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
+        return
+
+    while True:
+        console.print("\n[bold cyan]MITM Proxy Options:[/bold cyan]")
+        
+        # Create options table
+        options_table = Table(box=box.SIMPLE_HEAVY)
+        options_table.add_column("Option", justify="center", style="bold magenta")
+        options_table.add_column("Description", style="cyan")
+        options_table.add_row("1", "Start Regular Proxy (Default 8080)")
+        options_table.add_row("2", "Start Transparent Proxy")
+        options_table.add_row("3", "Start Reverse Proxy")
+        options_table.add_row("4", "Start SOCKS Proxy")
+        options_table.add_row("5", "Start Proxy with Custom Options")
+        options_table.add_row("6", "View Running Proxies")
+        options_table.add_row("7", "Return to Main Menu")
+        console.print(options_table)
+
+        choice = console.input("\n[bold yellow]Select option (1-7): [/bold yellow]").strip()
+
+        if choice == '1':
+            start_regular_proxy()
+        elif choice == '2':
+            start_transparent_proxy()
+        elif choice == '3':
+            start_reverse_proxy()
+        elif choice == '4':
+            start_socks_proxy()
+        elif choice == '5':
+            start_custom_proxy()
+        elif choice == '6':
+            view_running_proxies()
+        elif choice == '7':
+            return
+        else:
+            console.print("[red]Invalid option. Please try again.[/red]")
+
+def start_regular_proxy():
+    """Start a regular HTTP proxy with mitmproxy"""
+    try:
+        # Get port number
+        while True:
+            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
+            if not port:
+                port = "8080"
+            if port.isdigit() and 1 <= int(port) <= 65535:
+                break
+            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+
+        # Get script file if needed
+        script_file = console.input("[bold yellow]Enter path to Python script (optional): [/bold yellow]").strip()
+        
+        # Create new tmux pane
+        subprocess.run(['tmux', 'split-window', '-v'], check=True)
+        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
+                               capture_output=True, text=True, check=True).stdout.strip()
+
+        # Build command
+        cmd = f"mitmproxy -p {port}"
+        if script_file:
+            cmd += f" -s {script_file}"
+
+        # Start mitmproxy
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        
+        console.print(f"[green]Regular proxy started on port {port}[/green]")
+        console.print("[yellow]Configure your client to use this proxy:[/yellow]")
+        console.print(f"[cyan]    HTTP/HTTPS Proxy: localhost:{port}[/cyan]")
+        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+        console.print("[yellow]Press 'q' in mitmproxy to quit[/yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error starting proxy: {str(e)}[/red]")
+
+def start_transparent_proxy():
+    """Start a transparent proxy with mitmproxy"""
+    try:
+        # Get port number
+        while True:
+            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
+            if not port:
+                port = "8080"
+            if port.isdigit() and 1 <= int(port) <= 65535:
+                break
+            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+
+        # Create new tmux pane
+        subprocess.run(['tmux', 'split-window', '-v'], check=True)
+        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
+                               capture_output=True, text=True, check=True).stdout.strip()
+
+        # Start mitmproxy in transparent mode
+        cmd = f"sudo mitmproxy --mode transparent --showhost -p {port}"
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        
+        console.print(f"[green]Transparent proxy started on port {port}[/green]")
+        console.print("[yellow]Make sure to set up your iptables rules:[/yellow]")
+        console.print(f"[cyan]    sudo iptables -t nat -A PREROUTING -i <interface> -p tcp --dport 80 -j REDIRECT --to-port {port}[/cyan]")
+        console.print(f"[cyan]    sudo iptables -t nat -A PREROUTING -i <interface> -p tcp --dport 443 -j REDIRECT --to-port {port}[/cyan]")
+        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error starting transparent proxy: {str(e)}[/red]")
+
+def start_reverse_proxy():
+    """Start a reverse proxy with mitmproxy"""
+    try:
+        # Get configuration
+        while True:
+            listen_port = console.input("[bold yellow]Enter local port to listen on: [/bold yellow]").strip()
+            if listen_port.isdigit() and 1 <= int(listen_port) <= 65535:
+                break
+            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+
+        upstream_host = console.input("[bold yellow]Enter upstream host (e.g., example.com): [/bold yellow]").strip()
+        
+        while True:
+            upstream_port = console.input("[bold yellow]Enter upstream port: [/bold yellow]").strip()
+            if upstream_port.isdigit() and 1 <= int(upstream_port) <= 65535:
+                break
+            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+
+        # Create new tmux pane
+        subprocess.run(['tmux', 'split-window', '-v'], check=True)
+        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
+                               capture_output=True, text=True, check=True).stdout.strip()
+
+        # Start mitmproxy in reverse proxy mode
+        cmd = f"mitmproxy --mode reverse:http://{upstream_host}:{upstream_port} -p {listen_port}"
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        
+        console.print(f"[green]Reverse proxy started on port {listen_port}[/green]")
+        console.print(f"[yellow]Forwarding to: {upstream_host}:{upstream_port}[/yellow]")
+        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error starting reverse proxy: {str(e)}[/red]")
+
+def start_socks_proxy():
+    """Start a SOCKS proxy with mitmproxy"""
+    try:
+        # Get port number
+        while True:
+            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
+            if not port:
+                port = "8080"
+            if port.isdigit() and 1 <= int(port) <= 65535:
+                break
+            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+
+        # Create new tmux pane
+        subprocess.run(['tmux', 'split-window', '-v'], check=True)
+        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
+                               capture_output=True, text=True, check=True).stdout.strip()
+
+        # Start mitmproxy in SOCKS mode
+        cmd = f"mitmproxy --mode socks5 -p {port}"
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        
+        console.print(f"[green]SOCKS proxy started on port {port}[/green]")
+        console.print("[yellow]Configure your client to use this SOCKS5 proxy:[/yellow]")
+        console.print(f"[cyan]    SOCKS5 Proxy: localhost:{port}[/cyan]")
+        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error starting SOCKS proxy: {str(e)}[/red]")
+
+def start_custom_proxy():
+    """Start mitmproxy with custom options"""
+    try:
+        console.print("[bold cyan]Custom Proxy Configuration:[/bold cyan]")
+        
+        # Get basic options
+        while True:
+            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
+            if not port:
+                port = "8080"
+            if port.isdigit() and 1 <= int(port) <= 65535:
+                break
+            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+
+        # Additional options
+        options = []
+        
+        # Mode selection
+        console.print("\n[cyan]Select proxy mode:[/cyan]")
+        console.print("1. Regular HTTP proxy")
+        console.print("2. Transparent proxy")
+        console.print("3. Reverse proxy")
+        console.print("4. SOCKS proxy")
+        
+        mode_choice = console.input("[bold yellow]Enter choice (1-4): [/bold yellow]").strip()
+        
+        if mode_choice == "2":
+            options.append("--mode transparent --showhost")
+        elif mode_choice == "3":
+            upstream = console.input("[bold yellow]Enter upstream URL (e.g., http://example.com): [/bold yellow]").strip()
+            options.append(f"--mode reverse:{upstream}")
+        elif mode_choice == "4":
+            options.append("--mode socks5")
+
+        # Optional features
+        if console.input("[bold yellow]Enable web interface? (y/N): [/bold yellow]").strip().lower() == 'y':
+            options.append("--web-host 0.0.0.0")
+            web_port = console.input("[bold yellow]Enter web interface port (default 8081): [/bold yellow]").strip()
+            if not web_port:
+                web_port = "8081"
+            options.append(f"--web-port {web_port}")
+
+        if console.input("[bold yellow]Add Python script? (y/N): [/bold yellow]").strip().lower() == 'y':
+            script = console.input("[bold yellow]Enter path to Python script: [/bold yellow]").strip()
+            if script:
+                options.append(f"-s {script}")
+
+        # Create new tmux pane
+        subprocess.run(['tmux', 'split-window', '-v'], check=True)
+        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
+                               capture_output=True, text=True, check=True).stdout.strip()
+
+        # Build and execute command
+        cmd = f"mitmproxy -p {port} {' '.join(options)}"
+        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        
+        console.print(f"[green]Custom proxy started with command:[/green]")
+        console.print(f"[cyan]{cmd}[/cyan]")
+        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error starting custom proxy: {str(e)}[/red]")
+
+def view_running_proxies():
+    """View currently running mitmproxy instances"""
+    try:
+        # Get running mitmproxy processes
+        ps = subprocess.run(['ps', 'aux'], capture_output=True, text=True, check=True)
+        mitm_processes = [line for line in ps.stdout.split('\n') if 'mitmproxy' in line]
+
+        if mitm_processes:
+            table = Table(title="Running mitmproxy Instances", box=box.HEAVY_EDGE)
+            table.add_column("PID", style="cyan")
+            table.add_column("Command", style="green")
+            table.add_column("Port", style="yellow")
+            table.add_column("Mode", style="magenta")
+
+            for proc in mitm_processes:
+                fields = proc.split()
+                pid = fields[1]
+                cmd = ' '.join(fields[10:])
+                
+                # Extract port and mode from command
+                port = "8080"  # default
+                mode = "regular"
+                
+                for arg in cmd.split():
+                    if arg.startswith('-p'):
+                        port = arg.split()[-1]
+                    elif arg.startswith('--mode'):
+                        mode = arg.split('=')[-1]
+
+                table.add_row(pid, cmd, port, mode)
+
+            console.print(table)
+        else:
+            console.print("[yellow]No running mitmproxy instances found.[/yellow]")
+
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error checking running proxies: {str(e)}[/red]")
+
+    console.input("\n[bold yellow]Press Enter to continue...[/bold yellow]")
+
 def main_menu():
     while True:
         clear_screen()
@@ -2078,8 +2548,9 @@ def main_menu():
             ("5", " Flow Analysis", "blue"),
             ("6", " Bluetooth Trace File Analysis", "red"),
             ("7", " Nessus Scan Management", "cyan"),
-            ("8", " SMACK and Security Files Search", "green"), 
-            ("9", " Exit", "red"),
+            ("8", " SMACK and Security Files Search", "green"),
+            ("9", " MITM Session Analysis", "red"),  # New option
+            ("10", " Exit", "red"),
         ]
 
         # Constructing the Menu Panel
@@ -2100,7 +2571,7 @@ def main_menu():
 
         # Input Prompt with Better UX
         choice = console.input(
-            "\n[bold yellow]Enter choice (1-9) or [bold red]Q[/bold red] to Quit: [/bold yellow]"
+            "\n[bold yellow]Enter choice (1-10) or [bold red]Q[/bold red] to Quit: [/bold yellow]"
         ).strip().lower()
 
         # Handling User Choices with Correct Routing
@@ -2120,7 +2591,9 @@ def main_menu():
             nessus_scan_management()
         elif choice == "8":
             execute_remote_find()
-        elif choice == "9" or choice == 'q':
+        elif choice == "9":
+            perform_mitm_analysis()
+        elif choice == "10" or choice == 'q':
             console.print(Panel.fit("[bold cyan]Exiting...[/bold cyan]", box=box.DOUBLE))
             sys.exit(0)
         else:
