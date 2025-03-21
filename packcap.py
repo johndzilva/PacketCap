@@ -2230,300 +2230,370 @@ def execute_remote_find():
 
     console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
 
+def check_tmux_session():
+    """Check for tmux session with multiple detection methods and create if needed"""
+    try:
+        # Method 1: Check TMUX environment variable
+        if os.environ.get('TMUX'):
+            return True
+
+        # Method 2: Check if parent process is tmux
+        try:
+            with open('/proc/self/status', 'r') as f:
+                for line in f:
+                    if line.startswith('PPid:'):
+                        ppid = int(line.split()[1])
+                        with open(f'/proc/{ppid}/comm', 'r') as pf:
+                            if 'tmux' in pf.read():
+                                return True
+        except:
+            pass
+
+        # Method 3: Try tmux command
+        try:
+            subprocess.run(['tmux', 'display-message'], 
+                         stdout=subprocess.PIPE, 
+                         stderr=subprocess.PIPE, 
+                         check=True)
+            return True
+        except:
+            pass
+
+        # No tmux session found, offer to create one
+        console.print("[yellow]No tmux session detected.[/yellow]")
+        create_choice = console.input("[bold yellow]Would you like to create a new tmux session? (Y/n): [/bold yellow]").strip().lower()
+        
+        if create_choice != 'n':
+            # Save current working directory and command
+            cwd = os.getcwd()
+            script_path = os.path.abspath(sys.argv[0])
+            
+            console.print("[cyan]Creating new tmux session...[/cyan]")
+            
+            try:
+                # Create new tmux session and execute current script
+                subprocess.run(['tmux', 'new-session', '-d', '-s', 'mitm_session'], check=True)
+                subprocess.run(['tmux', 'send-keys', '-t', 'mitm_session', f'cd {cwd}', 'C-m'], check=True)
+                subprocess.run(['tmux', 'send-keys', '-t', 'mitm_session', f'python3 {script_path}', 'C-m'], check=True)
+                subprocess.run(['tmux', 'attach-session', '-t', 'mitm_session'], check=True)
+                
+                # Exit current non-tmux instance
+                console.print("[green]Switched to tmux session. Please select MITM option again.[/green]")
+                sys.exit(0)
+            except subprocess.CalledProcessError as e:
+                console.print(f"[red]Failed to create tmux session: {str(e)}[/red]")
+                return False
+        else:
+            console.print("[red]MITM analysis requires a tmux session.[/red]")
+            return False
+
+        return False
+    except Exception as e:
+        console.print(f"[red]Error checking tmux session: {str(e)}[/red]")
+        return False
 
 def perform_mitm_analysis():
-    """Perform MITM analysis using mitmproxy features"""
-    clear_screen()
-    console.print(Panel.fit("[bold red]MITM Analysis with mitmproxy[/bold red]", box=box.DOUBLE))
+    """Perform MITM analysis for WiFi hotspot traffic"""
+    mitm_panes = []  # Store created tmux pane IDs for cleanup
 
-    # Check if running in tmux
-    try:
-        subprocess.run(['tmux', 'display-message'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-    except subprocess.CalledProcessError:
-        console.print("[red]Error: This function requires running inside a tmux session.[/red]")
-        console.print("[yellow]Please start tmux first and then run this program again.[/yellow]")
-        console.print("\n[cyan]You can start tmux by running:[/cyan]")
-        console.print("    tmux")
-        console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
-        return
-
-    # Check if mitmproxy is installed
-    try:
-        subprocess.run(['mitmproxy', '--version'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
-    except FileNotFoundError:
-        console.print("[red]Error: mitmproxy is not installed.[/red]")
-        console.print("[yellow]Please install mitmproxy first:[/yellow]")
-        console.print("    pip install mitmproxy")
+    # Check/create tmux session
+    if not check_tmux_session():
         console.input("\n[bold yellow]Press Enter to return to main menu...[/bold yellow]")
         return
 
     while True:
-        console.print("\n[bold cyan]MITM Proxy Options:[/bold cyan]")
-        
+        clear_screen()
+        console.print(Panel.fit("[bold red]MITM Analysis - WiFi Hotspot Traffic Interception[/bold red]", box=box.DOUBLE))
+
+        # Verify we're still in tmux (in case of session death)
+        if not check_tmux_session():
+            console.print("[red]Lost tmux session. Returning to main menu...[/red]")
+            time.sleep(2)
+            return
+
         # Create options table
         options_table = Table(box=box.SIMPLE_HEAVY)
         options_table.add_column("Option", justify="center", style="bold magenta")
         options_table.add_column("Description", style="cyan")
-        options_table.add_row("1", "Start Regular Proxy (Default 8080)")
-        options_table.add_row("2", "Start Transparent Proxy")
-        options_table.add_row("3", "Start Reverse Proxy")
-        options_table.add_row("4", "Start SOCKS Proxy")
-        options_table.add_row("5", "Start Proxy with Custom Options")
-        options_table.add_row("6", "View Running Proxies")
-        options_table.add_row("7", "Return to Main Menu")
+        options_table.add_row("1", "Setup MITM for Hotspot Traffic")
+        options_table.add_row("2", "View Active Interceptions")
+        options_table.add_row("3", "Return to Main Menu")
         console.print(options_table)
 
-        choice = console.input("\n[bold yellow]Select option (1-7): [/bold yellow]").strip()
+        choice = console.input("\n[bold yellow]Select option (1-3): [/bold yellow]").strip()
 
         if choice == '1':
-            start_regular_proxy()
+            pane_id = setup_hotspot_mitm()
+            if pane_id:
+                mitm_panes.append(pane_id)
         elif choice == '2':
-            start_transparent_proxy()
+            view_active_interceptions()
         elif choice == '3':
-            start_reverse_proxy()
-        elif choice == '4':
-            start_socks_proxy()
-        elif choice == '5':
-            start_custom_proxy()
-        elif choice == '6':
-            view_running_proxies()
-        elif choice == '7':
+            cleanup_mitm_sessions(mitm_panes)
             return
         else:
             console.print("[red]Invalid option. Please try again.[/red]")
+            time.sleep(1)
 
-def start_regular_proxy():
-    """Start a regular HTTP proxy with mitmproxy"""
+def setup_hotspot_mitm():
+    """Setup MITM for WiFi hotspot traffic"""
+    # Verify tmux session is still active
+    if not check_tmux_session():
+        console.print("[red]Lost tmux session. Cannot proceed.[/red]")
+        return None
+
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]MITM Setup for Hotspot Traffic[/bold cyan]", box=box.DOUBLE))
+
     try:
-        # Get port number
+        # Get network interfaces
+        interfaces = netifaces.interfaces() if netifaces else get_if_list()
+        
+        # Display available interfaces
+        interface_table = Table(title="Available Network Interfaces")
+        interface_table.add_column("No.", style="cyan")
+        interface_table.add_column("Interface", style="green")
+        interface_table.add_column("IP Address", style="yellow")
+
+        for idx, iface in enumerate(interfaces, 1):
+            ip = get_if_addr(iface) if iface != 'lo' else 'loopback'
+            interface_table.add_row(str(idx), iface, ip)
+
+        console.print(interface_table)
+
+        # Get hotspot interface
         while True:
-            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
+            iface_choice = console.input("\n[bold yellow]Select hotspot interface number: [/bold yellow]").strip()
+            if iface_choice.isdigit() and 1 <= int(iface_choice) <= len(interfaces):
+                hotspot_interface = interfaces[int(iface_choice) - 1]
+                break
+            console.print("[red]Invalid interface selection.[/red]")
+
+        # Get port for MITM proxy
+        while True:
+            port = console.input("\n[bold yellow]Enter port for MITM proxy (default 8080): [/bold yellow]").strip()
             if not port:
                 port = "8080"
             if port.isdigit() and 1 <= int(port) <= 65535:
                 break
-            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+            console.print("[red]Invalid port number.[/red]")
 
-        # Get script file if needed
-        script_file = console.input("[bold yellow]Enter path to Python script (optional): [/bold yellow]").strip()
+        # Setup iptables rules for traffic redirection
+        console.print("\n[cyan]Setting up iptables rules...[/cyan]")
         
-        # Create new tmux pane
-        subprocess.run(['tmux', 'split-window', '-v'], check=True)
-        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
-                               capture_output=True, text=True, check=True).stdout.strip()
-
-        # Build command
-        cmd = f"mitmproxy -p {port}"
-        if script_file:
-            cmd += f" -s {script_file}"
-
-        # Start mitmproxy
-        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        # Flush existing rules
+        subprocess.run(['sudo', 'iptables', '-t', 'nat', '-F'], check=True)
         
-        console.print(f"[green]Regular proxy started on port {port}[/green]")
-        console.print("[yellow]Configure your client to use this proxy:[/yellow]")
-        console.print(f"[cyan]    HTTP/HTTPS Proxy: localhost:{port}[/cyan]")
-        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
-        console.print("[yellow]Press 'q' in mitmproxy to quit[/yellow]")
+        # Redirect HTTP traffic
+        subprocess.run([
+            'sudo', 'iptables', '-t', 'nat', '-A', 'PREROUTING',
+            '-i', hotspot_interface,
+            '-p', 'tcp', '--dport', '80',
+            '-j', 'REDIRECT', '--to-port', port
+        ], check=True)
+        
+        # Redirect HTTPS traffic
+        subprocess.run([
+            'sudo', 'iptables', '-t', 'nat', '-A', 'PREROUTING',
+            '-i', hotspot_interface,
+            '-p', 'tcp', '--dport', '443',
+            '-j', 'REDIRECT', '--to-port', port
+        ], check=True)
 
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error starting proxy: {str(e)}[/red]")
+        console.print("[green]iptables rules configured successfully![/green]")
 
-def start_transparent_proxy():
-    """Start a transparent proxy with mitmproxy"""
-    try:
-        # Get port number
-        while True:
-            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
-            if not port:
-                port = "8080"
-            if port.isdigit() and 1 <= int(port) <= 65535:
-                break
-            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
-
-        # Create new tmux pane
+        # Create new tmux pane for mitmproxy
         subprocess.run(['tmux', 'split-window', '-v'], check=True)
         pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
                                capture_output=True, text=True, check=True).stdout.strip()
 
         # Start mitmproxy in transparent mode
-        cmd = f"sudo mitmproxy --mode transparent --showhost -p {port}"
+        cmd = f"sudo mitmproxy --mode transparent --showhost -p {port} --set flow_detail=3"
         subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
-        
-        console.print(f"[green]Transparent proxy started on port {port}[/green]")
-        console.print("[yellow]Make sure to set up your iptables rules:[/yellow]")
-        console.print(f"[cyan]    sudo iptables -t nat -A PREROUTING -i <interface> -p tcp --dport 80 -j REDIRECT --to-port {port}[/cyan]")
-        console.print(f"[cyan]    sudo iptables -t nat -A PREROUTING -i <interface> -p tcp --dport 443 -j REDIRECT --to-port {port}[/cyan]")
+
+        console.print("\n[green]MITM proxy started in transparent mode![/green]")
+        console.print(f"[cyan]Intercepting all traffic on interface {hotspot_interface}[/cyan]")
+        console.print("[yellow]Waiting for incoming connections...[/yellow]")
+        console.print("\n[bold magenta]Certificate Installation for Clients:[/bold magenta]")
+        console.print("1. Connect devices to the hotspot")
+        console.print("2. Visit [cyan]mitm.it[/cyan] on the device")
+        console.print("3. Follow certificate installation instructions")
         console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+        console.print("[yellow]Press 'q' in mitmproxy to stop interception[/yellow]")
+
+        return pane_id
 
     except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error starting transparent proxy: {str(e)}[/red]")
+        console.print(f"[red]Error setting up MITM: {str(e)}[/red]")
+        # Cleanup on error
+        cleanup_iptables_rules()
+        return None
+    except Exception as e:
+        console.print(f"[red]Unexpected error: {str(e)}[/red]")
+        cleanup_iptables_rules()
+        return None
 
-def start_reverse_proxy():
-    """Start a reverse proxy with mitmproxy"""
+def check_sudo_permissions():
+    """Check and obtain sudo permissions if needed"""
     try:
-        # Get configuration
-        while True:
-            listen_port = console.input("[bold yellow]Enter local port to listen on: [/bold yellow]").strip()
-            if listen_port.isdigit() and 1 <= int(listen_port) <= 65535:
-                break
-            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
-
-        upstream_host = console.input("[bold yellow]Enter upstream host (e.g., example.com): [/bold yellow]").strip()
+        # Try to run a simple sudo command to check/cache credentials
+        result = subprocess.run(['sudo', '-n', 'true'], 
+                              stdout=subprocess.PIPE, 
+                              stderr=subprocess.PIPE)
         
-        while True:
-            upstream_port = console.input("[bold yellow]Enter upstream port: [/bold yellow]").strip()
-            if upstream_port.isdigit() and 1 <= int(upstream_port) <= 65535:
-                break
-            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
-
-        # Create new tmux pane
-        subprocess.run(['tmux', 'split-window', '-v'], check=True)
-        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
-                               capture_output=True, text=True, check=True).stdout.strip()
-
-        # Start mitmproxy in reverse proxy mode
-        cmd = f"mitmproxy --mode reverse:http://{upstream_host}:{upstream_port} -p {listen_port}"
-        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
+        if result.returncode != 0:
+            console.print("[yellow]Sudo permissions required for iptables operations.[/yellow]")
+            console.print("[cyan]Please enter your sudo password when prompted.[/cyan]")
+            
+            # Ask for sudo password explicitly
+            sudo_check = subprocess.run(['sudo', 'true'], 
+                                      stdout=subprocess.PIPE, 
+                                      stderr=subprocess.PIPE)
+            
+            if sudo_check.returncode != 0:
+                console.print("[red]Failed to obtain sudo permissions.[/red]")
+                return False
         
-        console.print(f"[green]Reverse proxy started on port {listen_port}[/green]")
-        console.print(f"[yellow]Forwarding to: {upstream_host}:{upstream_port}[/yellow]")
-        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+        return True
+    except Exception as e:
+        console.print(f"[red]Error checking sudo permissions: {str(e)}[/red]")
+        return False
 
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error starting reverse proxy: {str(e)}[/red]")
+def view_active_interceptions():
+    """View currently active MITM interceptions"""
+    clear_screen()
+    console.print(Panel.fit("[bold cyan]Active Interceptions[/bold cyan]", box=box.DOUBLE))
 
-def start_socks_proxy():
-    """Start a SOCKS proxy with mitmproxy"""
+    # Check sudo permissions first
+    if not check_sudo_permissions():
+        console.print("[red]Cannot check interceptions without sudo permissions.[/red]")
+        console.input("\n[bold yellow]Press Enter to continue...[/bold yellow]")
+        return
+
     try:
-        # Get port number
-        while True:
-            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
-            if not port:
-                port = "8080"
-            if port.isdigit() and 1 <= int(port) <= 65535:
-                break
-            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+        # Check if iptables is available
+        try:
+            subprocess.run(['which', 'iptables'], 
+                         stdout=subprocess.PIPE, 
+                         stderr=subprocess.PIPE, 
+                         check=True)
+        except subprocess.CalledProcessError:
+            console.print("[red]iptables is not installed on this system.[/red]")
+            console.input("\n[bold yellow]Press Enter to continue...[/bold yellow]")
+            return
 
-        # Create new tmux pane
-        subprocess.run(['tmux', 'split-window', '-v'], check=True)
-        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
-                               capture_output=True, text=True, check=True).stdout.strip()
+        # Check iptables rules with error handling
+        try:
+            nat_rules = subprocess.run(
+                ['sudo', 'iptables', '-t', 'nat', '-L', 'PREROUTING', '-n', '-v'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            console.print("\n[green]Current NAT Rules:[/green]")
+            console.print(nat_rules.stdout if nat_rules.stdout else "[yellow]No NAT rules found.[/yellow]")
+        except subprocess.CalledProcessError as e:
+            console.print("[red]Error checking NAT rules. This might be normal if NAT table is not enabled.[/red]")
+            console.print(f"[yellow]Details: {e.stderr if e.stderr else 'No additional details available'}[/yellow]")
 
-        # Start mitmproxy in SOCKS mode
-        cmd = f"mitmproxy --mode socks5 -p {port}"
-        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
-        
-        console.print(f"[green]SOCKS proxy started on port {port}[/green]")
-        console.print("[yellow]Configure your client to use this SOCKS5 proxy:[/yellow]")
-        console.print(f"[cyan]    SOCKS5 Proxy: localhost:{port}[/cyan]")
-        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+        # Check running mitmproxy processes
+        try:
+            ps_output = subprocess.run(
+                ['ps', 'aux'],
+                capture_output=True,
+                text=True,
+                check=True
+            )
+            mitm_running = [line for line in ps_output.stdout.split('\n') 
+                           if 'mitmproxy' in line and 'grep' not in line]
 
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error starting SOCKS proxy: {str(e)}[/red]")
+            if mitm_running:
+                console.print("\n[green]Active MITM Processes:[/green]")
+                mitm_table = Table(show_header=True, header_style="bold magenta")
+                mitm_table.add_column("PID")
+                mitm_table.add_column("Command")
+                mitm_table.add_column("Port")
 
-def start_custom_proxy():
-    """Start mitmproxy with custom options"""
-    try:
-        console.print("[bold cyan]Custom Proxy Configuration:[/bold cyan]")
-        
-        # Get basic options
-        while True:
-            port = console.input("[bold yellow]Enter port number (default 8080): [/bold yellow]").strip()
-            if not port:
-                port = "8080"
-            if port.isdigit() and 1 <= int(port) <= 65535:
-                break
-            console.print("[red]Invalid port number. Please enter a number between 1 and 65535.[/red]")
+                for proc in mitm_running:
+                    fields = proc.split()
+                    pid = fields[1]
+                    cmd = ' '.join(fields[10:])
+                    # Extract port from command if available
+                    port = next((arg.split()[-1] for arg in cmd.split() if '-p' in arg), 'N/A')
+                    mitm_table.add_row(pid, cmd, port)
 
-        # Additional options
-        options = []
-        
-        # Mode selection
-        console.print("\n[cyan]Select proxy mode:[/cyan]")
-        console.print("1. Regular HTTP proxy")
-        console.print("2. Transparent proxy")
-        console.print("3. Reverse proxy")
-        console.print("4. SOCKS proxy")
-        
-        mode_choice = console.input("[bold yellow]Enter choice (1-4): [/bold yellow]").strip()
-        
-        if mode_choice == "2":
-            options.append("--mode transparent --showhost")
-        elif mode_choice == "3":
-            upstream = console.input("[bold yellow]Enter upstream URL (e.g., http://example.com): [/bold yellow]").strip()
-            options.append(f"--mode reverse:{upstream}")
-        elif mode_choice == "4":
-            options.append("--mode socks5")
+                console.print(mitm_table)
+            else:
+                console.print("\n[yellow]No active MITM processes found.[/yellow]")
 
-        # Optional features
-        if console.input("[bold yellow]Enable web interface? (y/N): [/bold yellow]").strip().lower() == 'y':
-            options.append("--web-host 0.0.0.0")
-            web_port = console.input("[bold yellow]Enter web interface port (default 8081): [/bold yellow]").strip()
-            if not web_port:
-                web_port = "8081"
-            options.append(f"--web-port {web_port}")
+        except subprocess.CalledProcessError as e:
+            console.print("[red]Error checking MITM processes.[/red]")
+            console.print(f"[yellow]Details: {e.stderr if e.stderr else 'No additional details available'}[/yellow]")
 
-        if console.input("[bold yellow]Add Python script? (y/N): [/bold yellow]").strip().lower() == 'y':
-            script = console.input("[bold yellow]Enter path to Python script: [/bold yellow]").strip()
-            if script:
-                options.append(f"-s {script}")
+        # Check network interfaces being monitored
+        try:
+            interfaces = netifaces.interfaces() if netifaces else get_if_list()
+            console.print("\n[green]Network Interfaces:[/green]")
+            interface_table = Table(show_header=True, header_style="bold magenta")
+            interface_table.add_column("Interface")
+            interface_table.add_column("IP Address")
+            interface_table.add_column("Status")
 
-        # Create new tmux pane
-        subprocess.run(['tmux', 'split-window', '-v'], check=True)
-        pane_id = subprocess.run(['tmux', 'display-message', '-p', '#{pane_id}'],
-                               capture_output=True, text=True, check=True).stdout.strip()
+            for iface in interfaces:
+                if iface != 'lo':  # Skip loopback
+                    ip = get_if_addr(iface)
+                    # Check if interface is being monitored (has NAT rules)
+                    is_monitored = False
+                    try:
+                        check_iface = subprocess.run(
+                            ['sudo', 'iptables', '-t', 'nat', '-L', 'PREROUTING', '-n', '-v'],
+                            capture_output=True,
+                            text=True,
+                            check=True
+                        )
+                        is_monitored = iface in check_iface.stdout
+                    except:
+                        pass
 
-        # Build and execute command
-        cmd = f"mitmproxy -p {port} {' '.join(options)}"
-        subprocess.run(['tmux', 'send-keys', '-t', pane_id, cmd, 'C-m'], check=True)
-        
-        console.print(f"[green]Custom proxy started with command:[/green]")
-        console.print(f"[cyan]{cmd}[/cyan]")
-        console.print("\n[yellow]Use Ctrl+b ↑/↓ to switch between panes[/yellow]")
+                    status = "[green]Monitored[/green]" if is_monitored else "[yellow]Not Monitored[/yellow]"
+                    interface_table.add_row(iface, ip, status)
 
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error starting custom proxy: {str(e)}[/red]")
+            console.print(interface_table)
 
-def view_running_proxies():
-    """View currently running mitmproxy instances"""
-    try:
-        # Get running mitmproxy processes
-        ps = subprocess.run(['ps', 'aux'], capture_output=True, text=True, check=True)
-        mitm_processes = [line for line in ps.stdout.split('\n') if 'mitmproxy' in line]
+        except Exception as e:
+            console.print("[red]Error checking network interfaces.[/red]")
+            console.print(f"[yellow]Details: {str(e)}[/yellow]")
 
-        if mitm_processes:
-            table = Table(title="Running mitmproxy Instances", box=box.HEAVY_EDGE)
-            table.add_column("PID", style="cyan")
-            table.add_column("Command", style="green")
-            table.add_column("Port", style="yellow")
-            table.add_column("Mode", style="magenta")
-
-            for proc in mitm_processes:
-                fields = proc.split()
-                pid = fields[1]
-                cmd = ' '.join(fields[10:])
-                
-                # Extract port and mode from command
-                port = "8080"  # default
-                mode = "regular"
-                
-                for arg in cmd.split():
-                    if arg.startswith('-p'):
-                        port = arg.split()[-1]
-                    elif arg.startswith('--mode'):
-                        mode = arg.split('=')[-1]
-
-                table.add_row(pid, cmd, port, mode)
-
-            console.print(table)
-        else:
-            console.print("[yellow]No running mitmproxy instances found.[/yellow]")
-
-    except subprocess.CalledProcessError as e:
-        console.print(f"[red]Error checking running proxies: {str(e)}[/red]")
+    except Exception as e:
+        console.print(f"[red]Error checking active interceptions: {str(e)}[/red]")
 
     console.input("\n[bold yellow]Press Enter to continue...[/bold yellow]")
+
+def cleanup_mitm_sessions(pane_ids):
+    """Clean up MITM sessions and restore network settings"""
+    try:
+        # Kill all MITM-related panes
+        for pane_id in pane_ids:
+            try:
+                subprocess.run(['tmux', 'kill-pane', '-t', pane_id], check=True)
+            except subprocess.CalledProcessError:
+                continue
+
+        # Clean up iptables rules
+        cleanup_iptables_rules()
+
+        console.print("[green]Successfully cleaned up all MITM sessions and restored network settings.[/green]")
+    except Exception as e:
+        console.print(f"[red]Error during cleanup: {str(e)}[/red]")
+
+def cleanup_iptables_rules():
+    """Clean up iptables rules"""
+    try:
+        # Flush NAT rules
+        subprocess.run(['sudo', 'iptables', '-t', 'nat', '-F'], check=True)
+        console.print("[green]iptables rules cleaned up.[/green]")
+    except subprocess.CalledProcessError as e:
+        console.print(f"[red]Error cleaning up iptables rules: {str(e)}[/red]")
 
 def main_menu():
     while True:
@@ -2549,7 +2619,7 @@ def main_menu():
             ("6", " Bluetooth Trace File Analysis", "red"),
             ("7", " Nessus Scan Management", "cyan"),
             ("8", " SMACK and Security Files Search", "green"),
-            ("9", " MITM Session Analysis", "red"),  # New option
+            ("9", " MITM Session Analysis", "red"), 
             ("10", " Exit", "red"),
         ]
 
